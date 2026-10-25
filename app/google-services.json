@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1084102871842-klkgvvfhhn5v1ca0s9kmbhl7434bprp4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "hu.bekesmegyeifoci.app",
+            "certificate_hash": "005a33e3d0dae99a55d841be112768248b6618f6"
+          }
+        },
+        {
           "client_id": "1084102871842-k59qqser5hdqj719litufvc8hmdm19u3.apps.googleusercontent.com",
           "client_type": 3
         }
