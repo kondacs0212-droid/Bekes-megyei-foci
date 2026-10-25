@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1084102871842",
+    "project_id": "bekes-megyei-foci",
+    "storage_bucket": "bekes-megyei-foci.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1084102871842:android:89b983a66fff2004eab37b",
+        "android_client_info": {
+          "package_name": "hu.bekesmegyeifoci.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1084102871842-klkgvvfhhn5v1ca0s9kmbhl7434bprp4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "hu.bekesmegyeifoci.app",
+            "certificate_hash": "005a33e3d0dae99a55d841be112768248b6618f6"
+          }
+        },
+        {
+          "client_id": "1084102871842-k59qqser5hdqj719litufvc8hmdm19u3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB8MVB8-EpB-Rn_TnfHsalgClpmc_1aGb4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1084102871842-k59qqser5hdqj719litufvc8hmdm19u3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
