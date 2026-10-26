@@ -57,6 +57,6 @@ public class MainActivity extends Activity {
   @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);if(request!=42)return;
     try{GoogleSignInAccount account=GoogleSignIn.getSignedInAccountFromIntent(data).getResult(ApiException.class);
       auth.signInWithCredential(GoogleAuthProvider.getCredential(account.getIdToken(),null)).addOnSuccessListener(r->updateAuth()).addOnFailureListener(e->send("error",e.getMessage()));
-    }catch(Exception e){send("error","Google-belépés sikertelen: "+e.getMessage());}}
+    }catch(Exception e){send("error","Google-belépés sikertelen: "+e.getMessage()+(e instanceof ApiException ? " | Kód: "+((ApiException)e).getStatusCode() : "")+" | Web client: "+getString(R.string.default_web_client_id));}}
   @Override protected void onDestroy(){if(matchListener!=null)matchListener.remove();if(playerListener!=null)playerListener.remove();if(adminListener!=null)adminListener.remove();web.destroy();super.onDestroy();}
 }
