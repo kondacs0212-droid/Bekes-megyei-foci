@@ -10,7 +10,6 @@ async function main() {
   }
 
   let serviceAccount;
-
   try {
     serviceAccount = JSON.parse(secret);
   } catch (error) {
@@ -29,11 +28,15 @@ async function main() {
   const previousDoc = await stateRef.get();
 
   const previous = previousDoc.exists
-    ? previousDoc.data()
+    ? previousDoc.data() || {}
     : {};
 
   const current = {};
   const messages = [];
+  const now = Date.now();
+
+  // Friss kezdésnek az elmúlt 15 perc számít.
+  const RECENT_START_MS = 15 * 60 * 1000;
 
   for (const doc of matches.docs) {
     const m = doc.data();
@@ -45,66 +48,71 @@ async function main() {
     const status = m.status || "Tervezett";
     const period = Number(m.period || 1);
 
+    const startedAt = String(m.actualStartedAt || "");
+    const startedMs = Date.parse(startedAt);
+    const recentStart =
+      Number.isFinite(startedMs) &&
+      startedMs <= now &&
+      now - startedMs <= RECENT_START_MS;
+
+    const oldStatus = old?.status || "Tervezett";
+    const oldPeriod = Number(old?.period || 1);
+
+    // Megjegyezzük, melyik kezdésről küldtünk értesítést.
+    let notifiedStart =
+      String(old?.notifiedStart || "");
+
     current[doc.id] = {
       status,
       period,
-      actualStartedAt: m.actualStartedAt || "",
+      actualStartedAt: startedAt,
+      notifiedStart,
       events: events.map(e => JSON.stringify(e))
     };
-
-    // Új mérkőzésnél először eltároljuk az állapotot.
-    if (!old) continue;
 
     const notify = (title, body) => {
       messages.push({
         topic: "kardos_ksk",
         notification: { title, body }
       });
+      console.log("Értesítés előkészítve:", title, name);
     };
 
-    const oldStatus = old.status || "Tervezett";
-    const oldPeriod = Number(old.period || 1);
-
-    // MECCSKEZDÉS
-    // Nem követeljük meg, hogy a korábbi státusz
-    // pontosan "Tervezett" legyen.
+    // ELSŐ FÉLIDŐ KEZDETE
+    // Az actualStartedAt alapján is működik.
+    // Régebbi, már élő meccsekről nem küld
+    // tévesen új kezdési értesítést.
     if (
       status === "Élő" &&
       period === 1 &&
-      oldStatus !== "Élő" &&
-      oldStatus !== "Félidő" &&
-      oldStatus !== "Vége"
+      startedAt &&
+      recentStart &&
+      notifiedStart !== startedAt
     ) {
-      notify(
-        "⚽ Mérkőzés kezdete",
-        `${name} • 0:0`
-      );
+      notify("⚽ Mérkőzés kezdete", name);
+      notifiedStart = startedAt;
+      current[doc.id].notifiedStart = notifiedStart;
     }
+
+    // Új mérkőzés többi eseményéhez
+    // először alapállapotot rögzítünk.
+    if (!old) continue;
 
     // FÉLIDŐ
     if (
       status === "Félidő" &&
       oldStatus !== "Félidő"
     ) {
-      notify(
-        "⏸ Félidő",
-        `${name} • ${score}`
-      );
+      notify("⏸ Félidő", `${name} • ${score}`);
     }
 
     // MÁSODIK FÉLIDŐ
     if (
       status === "Élő" &&
       period === 2 &&
-      (
-        oldStatus === "Félidő" ||
-        oldPeriod !== 2
-      )
+      (oldStatus === "Félidő" || oldPeriod !== 2)
     ) {
-      notify(
-        "▶ Második félidő",
-        `${name} • ${score}`
-      );
+      notify("▶ Második félidő", `${name} • ${score}`);
     }
 
     // MÉRKŐZÉS VÉGE
@@ -112,19 +120,15 @@ async function main() {
       status === "Vége" &&
       oldStatus !== "Vége"
     ) {
-      notify(
-        "🏁 Mérkőzés vége",
-        `${name} • ${score}`
-      );
+      notify("🏁 Mérkőzés vége", `${name} • ${score}`);
     }
 
-    // ESEMÉNYEK
-    // Azonosítót használunk, ha van.
-    // A régi, azonosító nélküli eseményeket
-    // a korábbi sorrendjük alapján ismerjük fel.
+    // GÓLOK, LAPOK, CSERÉK
     const oldEvents = (old.events || []).map(value => {
       try {
-        return JSON.parse(value);
+        return typeof value === "string"
+          ? JSON.parse(value)
+          : value;
       } catch (error) {
         return null;
       }
@@ -150,7 +154,6 @@ async function main() {
 
     for (let index = 0; index < events.length; index++) {
       const e = events[index];
-
       if (!e || !e.type) continue;
 
       let isNew = false;
@@ -158,9 +161,11 @@ async function main() {
       if (e.id) {
         isNew = !oldIds.has(String(e.id));
 
-        // Migráció: régi eseményhez utólag
-        // hozzáadott azonosító nem új esemény.
-        if (isNew && oldEvents[index] && !oldEvents[index].id) {
+        if (
+          isNew &&
+          oldEvents[index] &&
+          !oldEvents[index].id
+        ) {
           isNew = false;
         }
       } else {
@@ -170,8 +175,6 @@ async function main() {
         if (count > 0) {
           oldLegacyCounts.set(key, count - 1);
         } else {
-          // Régi esemény utólagos szerkesztése
-          // ne számítson új eseménynek.
           isNew = index >= oldEvents.length;
         }
       }
@@ -195,12 +198,17 @@ async function main() {
     }
   }
 
-  // A küldés sikeressége után mentjük az állapotot.
+  // Elküldjük az értesítéseket.
   for (const message of messages) {
     const id = await messaging.send(message);
-    console.log("Értesítés elküldve:", id);
+    console.log(
+      "Értesítés elküldve:",
+      message.notification.title,
+      id
+    );
   }
 
+  // Sikeres küldés után mentjük az állapotot.
   await stateRef.set(current);
 
   console.log(
