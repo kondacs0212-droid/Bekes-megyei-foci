@@ -2,6 +2,10 @@ package hu.bekesmegyeifoci.app;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.os.Build;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import com.google.firebase.messaging.FirebaseMessaging;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -27,6 +31,8 @@ public class MainActivity extends Activity {
     setContentView(web);
     web.loadUrl("file:///android_asset/index.html");
     web.postDelayed(this::startListeners, 1000);
+    FirebaseMessaging.getInstance().subscribeToTopic("kardos_ksk");
+    if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
   }
 
   private void send(String event, Object payload) {
