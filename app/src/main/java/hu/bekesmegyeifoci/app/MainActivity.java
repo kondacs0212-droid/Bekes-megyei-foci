@@ -2,10 +2,6 @@ package hu.bekesmegyeifoci.app;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.os.Build;
-import android.Manifest;
-import android.content.pm.PackageManager;
-import com.google.firebase.messaging.FirebaseMessaging;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -31,8 +27,6 @@ public class MainActivity extends Activity {
     setContentView(web);
     web.loadUrl("file:///android_asset/index.html");
     web.postDelayed(this::startListeners, 1000);
-    FirebaseMessaging.getInstance().subscribeToTopic("kardos_ksk");
-    if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
   }
 
   private void send(String event, Object payload) {
@@ -98,6 +92,28 @@ public class MainActivity extends Activity {
     }
     @JavascriptInterface public void saveMatch(String id, String json) { save("matches", id, json); }
     @JavascriptInterface public void savePlayer(String id, String json) { save("players", id, json); }
+    @JavascriptInterface public void deleteMatch(String id) {
+      if (id == null || id.trim().isEmpty()) {
+        send("error", "Hiányzik a mérkőzés azonosítója.");
+        return;
+      }
+      com.google.firebase.auth.FirebaseUser user = auth.getCurrentUser();
+      if (user == null) {
+        send("error", "A törléshez adminbelépés szükséges.");
+        return;
+      }
+      db.collection("admins").document(user.getUid()).get()
+        .addOnSuccessListener(doc -> {
+          if (!Boolean.TRUE.equals(doc.getBoolean("enabled"))) {
+            send("error", "Nincs adminjogosultságod a törléshez.");
+            return;
+          }
+          db.collection("matches").document(id).delete()
+            .addOnFailureListener(e -> send("error", "Törlés sikertelen: " + e.getMessage()));
+        })
+        .addOnFailureListener(e -> send("error", "Adminellenőrzési hiba: " + e.getMessage()));
+    }
+
 
     private void save(String collection, String id, String json) {
       try {
