@@ -1,4 +1,3 @@
-
 name: Foci értesítések
 
 on:
@@ -8,6 +7,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: foci-ertesitesek
+  cancel-in-progress: false
 
 jobs:
   notifications:
@@ -21,7 +24,10 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Firebase Admin SDK telepítése
+        run: npm install --no-save firebase-admin
+
       - name: Értesítési program futtatása
-        run: node scripts/foci-ertesitesek.js
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/foci-ertesitesek.js
