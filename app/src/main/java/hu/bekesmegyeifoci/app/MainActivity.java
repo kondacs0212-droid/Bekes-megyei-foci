@@ -1,17 +1,22 @@
 package hu.bekesmegyeifoci.app;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.*;
+import com.google.firebase.messaging.FirebaseMessaging;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.util.*;
 
 public class MainActivity extends Activity {
+  private static final int NOTIFICATION_PERMISSION_REQUEST = 1001;
   private WebView web;
   private final FirebaseFirestore db = FirebaseFirestore.getInstance();
   private final FirebaseAuth auth = FirebaseAuth.getInstance();
@@ -27,6 +32,16 @@ public class MainActivity extends Activity {
     setContentView(web);
     web.loadUrl("file:///android_asset/index.html");
     web.postDelayed(this::startListeners, 1000);
+    setupNotifications();
+  }
+
+  private void setupNotifications() {
+    FirebaseMessaging.getInstance().subscribeToTopic("kardos_ksk")
+      .addOnFailureListener(e -> send("error", "Értesítési feliratkozás sikertelen: " + e.getMessage()));
+    if (Build.VERSION.SDK_INT >= 33 &&
+        checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+      requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_REQUEST);
+    }
   }
 
   private void send(String event, Object payload) {
@@ -109,11 +124,11 @@ public class MainActivity extends Activity {
             return;
           }
           db.collection("matches").document(id).delete()
+            .addOnSuccessListener(v -> send("matchDeleted", id))
             .addOnFailureListener(e -> send("error", "Törlés sikertelen: " + e.getMessage()));
         })
         .addOnFailureListener(e -> send("error", "Adminellenőrzési hiba: " + e.getMessage()));
     }
-
 
     private void save(String collection, String id, String json) {
       try {
