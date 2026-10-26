@@ -1,41 +1,66 @@
-<!doctype html><html lang="hu"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Békés megyei foci</title><style>
-*{box-sizing:border-box}body{font-family:system-ui,Arial;margin:0;background:#f0f5f1;color:#173724}header{background:#126b39;color:white;padding:20px 16px}h1{font-size:24px;margin:0}small{color:#cdebd6}main{padding:14px;max-width:750px;margin:auto}.card{background:white;border-radius:13px;padding:14px;margin:12px 0;box-shadow:0 2px 8px #0001}button{background:#176b3e;color:white;border:0;border-radius:9px;padding:10px 12px;margin:3px;font-size:15px}button.alt{background:#e3eee7;color:#174e2e}input,select{width:100%;padding:10px;border:1px solid #baccc0;border-radius:8px;margin:5px 0 12px;font:inherit}label{display:block;font-weight:600}nav{display:flex;gap:5px;overflow:auto}nav button{white-space:nowrap}.hidden{display:none!important}.muted{color:#6a7d71;font-size:13px}.score{font-size:23px;font-weight:800}.event{padding:8px;border-bottom:1px solid #eee}.error{color:#9b2424}.ok{color:#176b3e}details{margin-top:8px}summary{cursor:pointer;font-weight:bold}.overlay{position:fixed;inset:0;background:#0009;display:flex;align-items:center;justify-content:center;padding:18px;z-index:1000}.dialog{background:white;border-radius:14px;padding:22px;width:100%;max-width:400px;box-shadow:0 6px 30px #0004}.danger{background:#b42323}
-</style></head><body>
-<header><h1>⚽ Békés megyei foci</h1><small>Élő szöveges közvetítés és értesítések</small></header><main>
-<div class="card"><div id="status" class="muted">Kapcsolódás a Firebase-hez…</div><div id="login"><label for="loginEmail">E-mail-cím</label><input id="loginEmail" type="email" autocomplete="username" placeholder="E-mail-cím"><label for="loginPassword">Jelszó</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Jelszó"><button onclick="loginEmail()">Adminbelépés</button></div><button id="logout" class="alt hidden" onclick="Android.logout()">Kilépés</button><div id="error" class="error" role="alert"></div></div>
-<nav><button onclick="tab('matches')">Mérkőzések</button><button onclick="tab('fixtures')">Következő meccsek</button><button onclick="tab('players')">Játékosok</button><button onclick="tab('admin')">Admin</button></nav>
-<section id="matches"></section><section id="fixtures" class="hidden"></section><section id="players" class="hidden"></section><section id="admin" class="hidden"></section>
-</main>
-<div id="deleteOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="deleteTitle"><div class="dialog"><h2 id="deleteTitle">Mérkőzés törlése</h2><p>Biztosan végleg törölni szeretnéd ezt a mérkőzést?</p><p><strong id="deleteName"></strong></p><p class="error">A törlés nem vonható vissza.</p><button class="alt" onclick="cancelDelete()">Mégse</button><button class="danger" id="confirmDeleteButton" onclick="confirmDelete()">Igen, törlés</button></div></div>
-<script>
-let matches=[],players=[],isAdmin=false,auth={},current='matches',pendingDeleteId=null;const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function loginEmail(){let email=$('loginEmail').value.trim(),password=$('loginPassword').value;if(!email||!password){$('error').textContent='Add meg az e-mail-címedet és a jelszavadat.';return}$('error').textContent='';Android.login(email,password)}
-function receiveNative(event,raw){try{if(event==='error'){$('error').textContent=raw;return}let v=JSON.parse(raw);if(event==='matches'){matches=v;if(pendingDeleteId&&!matches.some(m=>m.id===pendingDeleteId))cancelDelete()}if(event==='players')players=v;if(event==='fcmToken'){fcmToken=String(raw);$('error').textContent='FCM-azonosító lekérve.'}if(event==='tokenCopied')$('error').textContent=String(raw);if(event==='auth'){auth=v;isAdmin=!!v.admin;if(!isAdmin)fcmToken='';$('status').textContent=!v.signedIn?'Nyilvános nézet • belépés nélkül':(v.admin?'Admin: ':'Belépve, adminjog nélkül: ')+(v.email||'');$('login').classList.toggle('hidden',!!v.signedIn);$('logout').classList.toggle('hidden',!v.signedIn);if(v.signedIn)$('loginPassword').value=''}render()}catch(e){$('error').textContent=e.message}}
-function tab(t){current=t;for(let x of ['matches','fixtures','players','admin'])$(x).classList.toggle('hidden',x!==t);render()}
-function render(){renderMatches();renderFixtures();renderPlayers();renderAdmin()}
-function clockText(m){if(m.status==='Félidő')return '45:00 • szünet';if(m.status==='Vége')return 'Vége';if(m.status!=='Élő')return 'Még nem indult el';let start=Date.parse(m.periodStartedAt||'');if(!Number.isFinite(start))return 'ÉLŐ';let seconds=Math.max(0,Math.floor((Date.now()-start)/1000));let base=m.period===2?45:0;return `${base+Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`}
-function renderMatches(){let out='<h2>Mérkőzések</h2>';if(!matches.length)out+='<p class="muted">Még nincsenek mérkőzések.</p>';
-for(let m of matches){let ev=Array.isArray(m.events)?m.events:[];let state=m.status||'Tervezett';let controls='';if(isAdmin){if(state==='Tervezett')controls=`<button onclick="matchAction('${m.id}','start')">▶ Meccs indítása</button>`;else if(state==='Élő'&&m.period!==2)controls=`<button onclick="matchAction('${m.id}','half')">⏸ Félidő</button>`;else if(state==='Félidő')controls=`<button onclick="matchAction('${m.id}','resume')">▶ Második félidő indítása</button>`;if(state==='Élő')controls+=`<button onclick="matchAction('${m.id}','finish')">🏁 Mérkőzés vége</button>`;controls+=`<button class="danger" onclick="deleteMatch('${m.id}')">🗑 Mérkőzés törlése</button>`}
-out+=`<article class="card"><div class="muted">${esc(m.group||'Csoport nélkül')} · ${esc(m.kickoff||'Időpont nélkül')} · ${esc(state)}</div><div>${state==='Élő'?'<strong style="color:#c52222">🔴 ÉLŐ</strong>':''} <span class="matchclock" data-id="${esc(m.id)}">${esc(clockText(m))}</span></div><div class="score">${esc(m.home)} ${esc(m.homeScore??0)} : ${esc(m.awayScore??0)} ${esc(m.away)}</div>${controls}<details><summary>Meccs részletei (${ev.length} esemény)</summary>${ev.map(e=>`<div class="event">${esc(e.minute)}' ${esc(e.type)} · ${esc(e.team)} ${esc(e.player||'')}</div>`).join('')||'<p>Még nincs esemény.</p>'}${isAdmin&&state==='Élő'?`<hr><label>Új esemény</label><select id="type-${m.id}"><option>Gól</option><option>Öngól</option><option>Sárga lap</option><option>Piros lap</option><option>Csere</option></select><select id="team-${m.id}"><option>${esc(m.home)}</option><option>${esc(m.away)}</option></select><select id="player-${m.id}">${players.map(p=>`<option value="${esc(p.name)}">${esc(p.name)} (${esc(p.team)})</option>`).join('')}<option value="">Ismeretlen játékos</option></select><input type="number" id="minute-${m.id}" placeholder="Perc" min="0" max="130"><button onclick="addEvent('${m.id}')">Esemény mentése</button>`:''}</details></article>`} $('matches').innerHTML=out}
-function showMatchMessage(text){const box=$('error');if(box){box.textContent=text;box.scrollIntoView({behavior:'smooth'})}}
-function matchAction(id,action){if(!isAdmin)return showMatchMessage('Nincs adminjogosultság.');const m=matches.find(x=>x.id===id);if(!m)return showMatchMessage('Nem található a mérkőzés.');const state=m.status||'Tervezett';const next={start:'Élő',half:'Félidő',resume:'Élő',finish:'Vége'}[action];const allowed={start:state==='Tervezett',half:state==='Élő'&&m.period!==2,resume:state==='Félidő',finish:state==='Élő'};if(!next||!allowed[action])return showMatchMessage('A művelet nem végezhető el. Állapot: '+state);const copy={...m};delete copy.id;copy.status=next;if(action==='start'){copy.period=1;copy.actualStartedAt=new Date().toISOString();copy.periodStartedAt=copy.actualStartedAt}if(action==='resume'){copy.period=2;copy.periodStartedAt=new Date().toISOString()}if(action==='half')copy.halftimeAt=new Date().toISOString();if(action==='finish')copy.finishedAt=new Date().toISOString();try{Android.saveMatch(id,JSON.stringify(copy));showMatchMessage('Művelet elküldve, várakozás a Firebase frissítésére.')}catch(e){showMatchMessage('Hiba: '+e.message)}}
-function deleteMatch(id){if(!isAdmin)return showMatchMessage('A törléshez adminjog szükséges.');const m=matches.find(x=>x.id===id);if(!m)return showMatchMessage('Nem található a mérkőzés.');pendingDeleteId=id;$('deleteName').textContent=(m.home||'Hazai csapat')+' – '+(m.away||'Vendégcsapat');$('confirmDeleteButton').disabled=false;$('deleteOverlay').classList.remove('hidden')}
-function cancelDelete(){pendingDeleteId=null;$('deleteOverlay').classList.add('hidden');$('confirmDeleteButton').disabled=false}
-function confirmDelete(){const id=pendingDeleteId;if(!id||!isAdmin){cancelDelete();return}if(!matches.some(m=>m.id===id)){cancelDelete();return showMatchMessage('A mérkőzés már nem található.')}try{Android.deleteMatch(id);cancelDelete();showMatchMessage('Törlési kérés elküldve. A Firebase visszajelzésére várunk.')}catch(e){cancelDelete();showMatchMessage('Törlési hiba: '+e.message)}}
-setInterval(()=>{document.querySelectorAll('.matchclock').forEach(el=>{let m=matches.find(x=>x.id===el.dataset.id);if(m)el.textContent=clockText(m)})},1000);
-function addEvent(id){if(!isAdmin)return;let m=matches.find(x=>x.id===id);if(!m)return;if(m.status!=='Élő')return showMatchMessage('Eseményt csak élő mérkőzéshez lehet rögzíteni.');let type=$('type-'+id).value,team=$('team-'+id).value,player=$('player-'+id).value,minute=Number($('minute-'+id).value);if($('minute-'+id).value.trim()==='')return showMatchMessage('Add meg a percet!');if(!Number.isFinite(minute)||minute<0||minute>130)return showMatchMessage('Érvényes percet adj meg!');let copy={...m};delete copy.id;copy.events=[...(m.events||[]),{type,team,player,minute}];if(type==='Gól'){if(team===m.home)copy.homeScore=Number(m.homeScore||0)+1;else copy.awayScore=Number(m.awayScore||0)+1}if(type==='Öngól'){if(team===m.home)copy.awayScore=Number(m.awayScore||0)+1;else copy.homeScore=Number(m.homeScore||0)+1}Android.saveMatch(id,JSON.stringify(copy))}
-function renderPlayers(){let out='<h2>Játékosok</h2>';out+=(players.length?players.map(p=>`<div class="card"><b>${esc(p.name||'Névtelen')}</b><div class="muted">${esc(p.team||'')}</div></div>`).join(''):'<div class="card">Még nincsenek felvitt játékosok.</div>');$('players').innerHTML=out}
-function requestFcmToken(){if(!isAdmin)return;Android.getFcmToken()}
-function copyFcmToken(){if(fcmToken)Android.copyFcmToken(fcmToken)}
-function renderAdmin(){$('admin').innerHTML='<h2>Adminisztráció</h2>'+(!isAdmin?'<p>Csak jóváhagyott adminok rögzíthetnek eredményt.</p>':`<div class="card"><h3>🔔 Értesítési teszt</h3><p class="muted">A készülék FCM-azonosítója. Csak teszteléshez használd, ne oszd meg nyilvánosan.</p><button onclick="requestFcmToken()">FCM-azonosító lekérése</button>${fcmToken?`<p style="overflow-wrap:anywhere;user-select:text;font-size:12px">${esc(fcmToken)}</p><button onclick="copyFcmToken()">Azonosító másolása</button>`:""}</div><div class="card"><h3>Új mérkőzés</h3><label>Csoport<input id="mgroup" placeholder="Például: Északi csoport"></label><label>Forduló<input id="round" type="number" min="1" placeholder="Forduló száma"></label><label>Hazai csapat<input id="home"></label><label>Vendégcsapat<input id="away"></label><label>Kezdés (év-hó-nap óra:perc)<input id="kickoff" placeholder="2026-10-31 14:00"></label><button onclick="newMatch()">Mérkőzés létrehozása</button></div><div class="card"><h3>Új játékos</h3><label>Név<input id="pname"></label><label>Csapat<input id="pteam"></label><button onclick="newPlayer()">Játékos hozzáadása</button></div>`)}
-function newMatch(){let home=$('home').value.trim(),away=$('away').value.trim(),kickoff=$('kickoff').value.trim(),group=$('mgroup').value.trim(),round=Number($('round').value)||null;if(!home||!away||!kickoff)return showMatchMessage('Tölts ki minden mezőt!');Android.saveMatch('',JSON.stringify({home,away,kickoff,group,round,status:'Tervezett',homeScore:0,awayScore:0,events:[]}))}
-function newPlayer(){let name=$('pname').value.trim(),team=$('pteam').value.trim();if(!name||!team)return showMatchMessage('Tölts ki minden mezőt!');Android.savePlayer('',JSON.stringify({name,team}))}
-function isFinished(m){let x=String(m.status||'').toLowerCase();return ['vége','végeredmény','befejezett','finished','final'].some(y=>x.includes(y))}
-function kickDate(m){let t=String(m.kickoff||'').trim().replace(' ','T');let d=new Date(t);return Number.isFinite(d.getTime())?d:null}
-function groupNames(){return [...new Set(matches.map(m=>m.group||'Csoport nélkül'))].sort((a,b)=>a.localeCompare(b,'hu'))}
-function filterControl(id,handler){let opts=groupNames().map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join('');return `<label>Csoport<select id="${id}" onchange="${handler}()"><option>Összes csoport</option>${opts}</select></label>`}
-function selectedGroup(id){return $(id)?.value||'Összes csoport'}
-function filtered(group){return matches.filter(m=>(group==='Összes csoport'||(m.group||'Csoport nélkül')===group))}
-function renderFixtures(){let chosen=selectedGroup('fixtureGroup');let upcoming=filtered(chosen).filter(m=>!isFinished(m)).sort((a,b)=>(kickDate(a)?.getTime()??Infinity)-(kickDate(b)?.getTime()??Infinity));let out='<h2>📅 Következő mérkőzések</h2><p class="muted">A Firestore-ba felvitt, még be nem fejezett mérkőzések. A múltbeli időpontú, lezáratlan meccsek is láthatók, hogy az admin javíthassa az állapotukat.</p>'+filterControl('fixtureGroup','renderFixtures');out+=upcoming.map(m=>`<div class="card"><div class="muted">${esc(m.group||'Csoport nélkül')} ${m.round?'· '+esc(m.round)+'. forduló':''}</div><b>${esc(m.home||'?')} – ${esc(m.away||'?')}</b><div>${esc(m.kickoff||'Időpont még nincs')}</div><div class="muted">${esc(m.status||'Tervezett')}</div></div>`).join('')||'<div class="card">Nincs megjeleníthető mérkőzés.</div>';$('fixtures').innerHTML=out;if($('fixtureGroup'))$('fixtureGroup').value=chosen}
-render();
-</script></body></html>
+function receiveNative(event, raw) {
+  try {
+    if (event === 'error') {
+      $('error').textContent = raw;
+      return;
+    }
+
+    if (event === 'fcmToken') {
+      fcmToken = String(raw || '').trim();
+      $('error').textContent = fcmToken
+        ? 'FCM-azonosító sikeresen lekérve.'
+        : 'Üres FCM-azonosító érkezett.';
+      renderAdmin();
+      return;
+    }
+
+    if (event === 'tokenCopied') {
+      $('error').textContent = String(raw || 'Azonosító másolva.');
+      return;
+    }
+
+    if (event === 'matchDeleted') {
+      $('error').textContent = 'A mérkőzés sikeresen törölve.';
+      return;
+    }
+
+    const v = JSON.parse(raw);
+
+    if (event === 'matches') {
+      matches = v;
+      if (
+        pendingDeleteId &&
+        !matches.some(m => m.id === pendingDeleteId)
+      ) {
+        cancelDelete();
+      }
+    }
+
+    if (event === 'players') {
+      players = v;
+    }
+
+    if (event === 'auth') {
+      auth = v;
+      isAdmin = !!v.admin;
+
+      if (!isAdmin) fcmToken = '';
+
+      $('status').textContent = !v.signedIn
+        ? 'Nyilvános nézet • belépés nélkül'
+        : (v.admin ? 'Admin: ' : 'Belépve, adminjog nélkül: ') +
+          (v.email || '');
+
+      $('login').classList.toggle('hidden', !!v.signedIn);
+      $('logout').classList.toggle('hidden', !v.signedIn);
+
+      if (v.signedIn) {
+        $('loginPassword').value = '';
+      }
+    }
+
+    render();
+  } catch (e) {
+    $('error').textContent = e.message;
+  }
+}
