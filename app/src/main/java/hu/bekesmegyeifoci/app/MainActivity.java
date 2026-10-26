@@ -1,6 +1,9 @@
 package hu.bekesmegyeifoci.app;
 
 import android.Manifest;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -90,6 +93,38 @@ public class MainActivity extends Activity {
   }
 
   public class Bridge {
+    @JavascriptInterface public void getFcmToken() {
+      runOnUiThread(() -> {
+        if (auth.getCurrentUser() == null) {
+          send("error", "Az azonosító megtekintéséhez adminbelépés szükséges.");
+          return;
+        }
+        db.collection("admins").document(auth.getCurrentUser().getUid()).get()
+          .addOnSuccessListener(doc -> {
+            if (!Boolean.TRUE.equals(doc.getBoolean("enabled"))) {
+              send("error", "Az azonosító megtekintéséhez adminjog szükséges.");
+              return;
+            }
+            FirebaseMessaging.getInstance().getToken()
+              .addOnSuccessListener(token -> send("fcmToken", token))
+              .addOnFailureListener(e -> send("error", "FCM azonosító lekérése sikertelen: " + e.getMessage()));
+          })
+          .addOnFailureListener(e -> send("error", "Adminellenőrzési hiba: " + e.getMessage()));
+      });
+    }
+    @JavascriptInterface public void copyFcmToken(String token) {
+      runOnUiThread(() -> {
+        if (auth.getCurrentUser() == null || token == null || token.isEmpty()) return;
+        FirebaseMessaging.getInstance().getToken().addOnSuccessListener(currentToken -> {
+          if (!currentToken.equals(token)) return;
+          ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+          if (clipboard != null) {
+            clipboard.setPrimaryClip(ClipData.newPlainText("FCM token", token));
+            send("tokenCopied", "Azonosító másolva.");
+          }
+        });
+      });
+    }
     @JavascriptInterface public void login(String email, String password) {
       runOnUiThread(() -> {
         String e = email == null ? "" : email.trim();
