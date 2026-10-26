@@ -1,4 +1,3 @@
-
 const admin = require("firebase-admin");
 
 async function main() {
