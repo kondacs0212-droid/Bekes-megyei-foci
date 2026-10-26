@@ -30,100 +30,175 @@ async function main() {
 
   const previous = previousDoc.exists
     ? previousDoc.data()
-    : null;
+    : {};
 
   const current = {};
   const messages = [];
 
   for (const doc of matches.docs) {
     const m = doc.data();
-    const old = previous?.[doc.id];
+    const old = previous[doc.id];
 
     const events = Array.isArray(m.events) ? m.events : [];
     const name = `${m.home || "Hazai"} – ${m.away || "Vendég"}`;
     const score = `${m.homeScore || 0}:${m.awayScore || 0}`;
+    const status = m.status || "Tervezett";
+    const period = Number(m.period || 1);
 
     current[doc.id] = {
-      status: m.status || "Tervezett",
-      period: m.period || 1,
+      status,
+      period,
+      actualStartedAt: m.actualStartedAt || "",
       events: events.map(e => JSON.stringify(e))
     };
 
+    // Új mérkőzésnél először eltároljuk az állapotot.
     if (!old) continue;
 
     const notify = (title, body) => {
       messages.push({
         topic: "kardos_ksk",
-        notification: {
-          title,
-          body
-        }
+        notification: { title, body }
       });
     };
 
-    if (old.status !== m.status) {
-      if (m.status === "Élő" && old.status === "Tervezett") {
-        notify("⚽ Mérkőzés kezdete", name);
-      }
+    const oldStatus = old.status || "Tervezett";
+    const oldPeriod = Number(old.period || 1);
 
-      if (m.status === "Félidő") {
-        notify("⏸ Félidő", `${name} • ${score}`);
-      }
-
-      if (m.status === "Vége") {
-        notify("🏁 Mérkőzés vége", `${name} • ${score}`);
-      }
-    }
-
+    // MECCSKEZDÉS
+    // Nem követeljük meg, hogy a korábbi státusz
+    // pontosan "Tervezett" legyen.
     if (
-      old.period !== m.period &&
-      m.period === 2 &&
-      m.status === "Élő"
+      status === "Élő" &&
+      period === 1 &&
+      oldStatus !== "Élő" &&
+      oldStatus !== "Félidő" &&
+      oldStatus !== "Vége"
     ) {
-      notify("▶ Második félidő", name);
+      notify(
+        "⚽ Mérkőzés kezdete",
+        `${name} • 0:0`
+      );
     }
 
-    const seen = new Map();
-
-    for (const value of old.events || []) {
-      seen.set(value, (seen.get(value) || 0) + 1);
+    // FÉLIDŐ
+    if (
+      status === "Félidő" &&
+      oldStatus !== "Félidő"
+    ) {
+      notify(
+        "⏸ Félidő",
+        `${name} • ${score}`
+      );
     }
 
-    for (const e of events) {
+    // MÁSODIK FÉLIDŐ
+    if (
+      status === "Élő" &&
+      period === 2 &&
+      (
+        oldStatus === "Félidő" ||
+        oldPeriod !== 2
+      )
+    ) {
+      notify(
+        "▶ Második félidő",
+        `${name} • ${score}`
+      );
+    }
+
+    // MÉRKŐZÉS VÉGE
+    if (
+      status === "Vége" &&
+      oldStatus !== "Vége"
+    ) {
+      notify(
+        "🏁 Mérkőzés vége",
+        `${name} • ${score}`
+      );
+    }
+
+    // ESEMÉNYEK
+    // Azonosítót használunk, ha van.
+    // A régi, azonosító nélküli eseményeket
+    // a korábbi sorrendjük alapján ismerjük fel.
+    const oldEvents = (old.events || []).map(value => {
+      try {
+        return JSON.parse(value);
+      } catch (error) {
+        return null;
+      }
+    });
+
+    const oldIds = new Set(
+      oldEvents
+        .filter(e => e && e.id)
+        .map(e => String(e.id))
+    );
+
+    const oldLegacyCounts = new Map();
+
+    for (const e of oldEvents) {
+      if (!e || e.id) continue;
+
       const key = JSON.stringify(e);
-      const count = seen.get(key) || 0;
+      oldLegacyCounts.set(
+        key,
+        (oldLegacyCounts.get(key) || 0) + 1
+      );
+    }
 
-      if (count) {
-        seen.set(key, count - 1);
-        continue;
+    for (let index = 0; index < events.length; index++) {
+      const e = events[index];
+
+      if (!e || !e.type) continue;
+
+      let isNew = false;
+
+      if (e.id) {
+        isNew = !oldIds.has(String(e.id));
+
+        // Migráció: régi eseményhez utólag
+        // hozzáadott azonosító nem új esemény.
+        if (isNew && oldEvents[index] && !oldEvents[index].id) {
+          isNew = false;
+        }
+      } else {
+        const key = JSON.stringify(e);
+        const count = oldLegacyCounts.get(key) || 0;
+
+        if (count > 0) {
+          oldLegacyCounts.set(key, count - 1);
+        } else {
+          // Régi esemény utólagos szerkesztése
+          // ne számítson új eseménynek.
+          isNew = index >= oldEvents.length;
+        }
       }
 
-      if (
-        ["Gól", "Öngól", "Sárga lap", "Piros lap"].includes(e.type)
-      ) {
-        let symbol = "⚽";
+      if (!isNew) continue;
 
-        if (e.type === "Sárga lap") {
-          symbol = "🟨";
-        }
+      const symbols = {
+        "Gól": "⚽",
+        "Öngól": "⚽",
+        "Sárga lap": "🟨",
+        "Piros lap": "🟥",
+        "Csere": "🔄"
+      };
 
-        if (e.type === "Piros lap") {
-          symbol = "🟥";
-        }
+      if (!symbols[e.type]) continue;
 
-        notify(
-          `${symbol} ${e.type}!`,
-          `${e.minute ?? 0}'. ${e.team || ""} ${e.player || ""} • ${name} • ${score}`
-        );
-      }
+      notify(
+        `${symbols[e.type]} ${e.type}!`,
+        `${e.minute ?? 0}'. ${e.team || ""} ${e.player || ""} • ${name} • ${score}`
+      );
     }
   }
 
-  if (previous) {
-    for (const message of messages) {
-      const id = await messaging.send(message);
-      console.log("Értesítés elküldve:", id);
-    }
+  // A küldés sikeressége után mentjük az állapotot.
+  for (const message of messages) {
+    const id = await messaging.send(message);
+    console.log("Értesítés elküldve:", id);
   }
 
   await stateRef.set(current);
