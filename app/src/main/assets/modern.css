@@ -1,0 +1,49 @@
+/* Békés megyei foci – kizárólag megjelenés, 2026 */
+:root{--green:#086b3b;--dark:#0b3324;--pale:#eaf5ef;--border:#dbe9e0;--shadow:0 8px 25px rgba(10,55,34,.08)}
+*{box-sizing:border-box}
+body{background:linear-gradient(180deg,#e8f3ed 0,#f5f8f6 420px);color:#173827;font-family:system-ui,-apple-system,Arial,sans-serif;line-height:1.45}
+header{background:linear-gradient(115deg,#063c2b,#087642 65%,#0a5a39);padding:26px 20px 28px;box-shadow:0 5px 20px #063b2925;position:relative;overflow:hidden}
+header:after{content:'⚽';position:absolute;right:-22px;bottom:-46px;font-size:140px;opacity:.11;pointer-events:none}
+header h1{font-size:clamp(24px,6vw,34px);letter-spacing:-.7px;font-weight:800;position:relative;z-index:1}
+header small{display:block;color:#d5f5e2;margin-top:4px;font-size:14px;position:relative;z-index:1}
+main{max-width:850px;padding:17px 14px 60px}
+.card{border:1px solid var(--border);border-radius:20px;background:#fff;padding:19px;margin:15px 0;box-shadow:var(--shadow)}
+main>.card:first-child{background:#fafffc}
+#status{font-weight:650;font-size:14px;color:#47675a}
+#error:not(:empty){background:#fff1f1;border:1px solid #ffcccc;border-radius:12px;padding:12px;margin-top:12px;overflow-wrap:anywhere}
+nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;overflow:visible;margin:20px 0 25px}
+nav button{min-width:0;white-space:normal;font-size:clamp(10px,2.5vw,14px);font-weight:700;line-height:1.25;padding:14px 5px;border:1px solid #d8e8dd;background:white;color:#2d5541;box-shadow:0 3px 12px #073a2410;border-radius:15px}
+nav button.active{background:linear-gradient(135deg,#06864b,#065d36);color:white;border-color:transparent;box-shadow:0 5px 14px #0b6e3b35}
+section>h2{font-size:clamp(22px,5vw,29px);letter-spacing:-.6px;margin:22px 4px 16px;color:#112f22}
+#matches article.card{padding:18px}
+#matches article.card>.muted{font-size:13px;font-weight:650;color:#6a8173}
+#matches article.card>.score{margin:18px 0 22px;font-size:clamp(19px,5vw,27px);font-weight:850;text-align:center;letter-spacing:-.45px;line-height:1.5;background:linear-gradient(135deg,#f3faf5,#fff);border:1px solid #e4f0e8;border-radius:16px;padding:17px 10px;overflow-wrap:anywhere}
+.matchclock{display:inline-block;color:#3b594a;font-size:14px;font-weight:750;margin:8px 0}
+button{background:linear-gradient(135deg,#087b44,#096137);color:#fff;font-weight:700;border-radius:11px;padding:11px 14px;min-height:43px;box-shadow:0 3px 8px #073a2417;transition:filter .15s}
+button:active{filter:brightness(.9)}
+button.alt{background:#e9f4ed;color:#135536;box-shadow:none}
+button.danger,.danger{background:#bd292e;color:#fff}
+#matches article.card button{margin:4px 4px 5px 0}
+#matches article.card details{border-top:1px solid #e6eee8;margin-top:17px;padding-top:15px}
+summary{font-size:15px;color:#214735;padding:7px 0;list-style-position:inside}
+.event{background:#f7faf8;border:1px solid #e6eee9;border-radius:12px;padding:12px;margin:8px 0}
+input,select{border:1px solid #c8d9ce;border-radius:11px;background:#fff;min-height:45px;padding:11px;margin:7px 0 14px;font-size:16px}
+input:focus,select:focus{outline:2px solid #8bd0a5;outline-offset:1px}
+label{font-size:14px;color:#284e38}
+.muted{color:#6d8075}
+.overlay{backdrop-filter:blur(4px)}
+.dialog{border-radius:20px;max-width:460px;box-shadow:0 14px 45px #001c1330}
+.crest-inline{width:42px;height:42px;object-fit:contain;vertical-align:middle;margin-right:7px;filter:drop-shadow(0 2px 3px #0002)}
+@media(max-width:400px){main{padding:12px 10px 45px}.card{padding:14px;border-radius:17px}nav{gap:5px}nav button{padding:12px 3px}#matches article.card>.score{font-size:19px;padding:12px 6px}.crest-inline{width:34px;height:34px}}
+
+/* Élő meccsnél piros eredmény és nagy, középre igazított óra. */
+#matches article.card .matchclock{display:block;text-align:center;font-size:clamp(23px,6vw,31px);font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:.4px;margin:10px 0 14px;color:#20563b}
+#matches article.card.is-live .matchclock{color:#d01f2c}
+#matches article.card .score{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:nowrap}
+#matches article.card .score .team-name{flex:1;min-width:0;font-size:clamp(13px,3.7vw,19px);line-height:1.25;overflow-wrap:anywhere}
+#matches article.card .score .team-name:first-child{text-align:left}
+#matches article.card .score .team-name:last-child{text-align:right}
+#matches article.card .score .score-numbers{flex:none;font-size:clamp(26px,7vw,39px);font-weight:900;white-space:nowrap;font-variant-numeric:tabular-nums;color:#183a29}
+#matches article.card.is-live .score .score-numbers{color:#d01f2c}
+#matches article.card.is-live .matchclock::before{content:'● ';font-size:.55em;vertical-align:middle}
+@media(max-width:400px){#matches article.card .score{padding:15px 9px;gap:5px}}
