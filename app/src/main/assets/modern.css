@@ -47,3 +47,30 @@ label{font-size:14px;color:#284e38}
 #matches article.card.is-live .score .score-numbers{color:#d01f2c}
 #matches article.card.is-live .matchclock::before{content:'● ';font-size:.55em;vertical-align:middle}
 @media(max-width:400px){#matches article.card .score{padding:15px 9px;gap:5px}}
+
+/* Jóváhagyott látványterv – mérkőzéskártyák */
+header{min-height:125px;background:radial-gradient(ellipse at 83% 95%,#14944a 0%,transparent 48%),linear-gradient(115deg,#003c28,#006839 75%,#03452d)}
+header:after{content:'⚽';opacity:.17;right:-18px;bottom:-64px;font-size:175px}
+main>.card:first-child{padding:17px 19px}
+nav{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+nav button{min-height:67px}
+#matches article.card{border:0;border-radius:22px;padding:19px 16px;box-shadow:0 9px 24px #092f2118}
+#matches article.card>.muted{margin-bottom:6px}
+#matches article.card .match-top{display:flex;justify-content:flex-end;align-items:center;gap:10px;min-height:38px;margin:0 0 5px}
+#matches article.card .live-badge{display:inline-flex;align-items:center;background:#ef1022;color:white;font-size:15px;font-weight:850;border-radius:22px;padding:6px 13px;line-height:1.2}
+#matches article.card .matchclock{display:inline-block!important;text-align:right!important;margin:0!important;font-size:clamp(22px,6vw,29px)!important;font-weight:900;line-height:1.2;color:#475b52;white-space:nowrap}
+#matches article.card.is-live .matchclock{color:#d30c22}
+#matches article.card.is-live .matchclock::before{content:none!important}
+#matches article.card>.score{display:grid!important;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:7px;margin:8px 0 20px;padding:8px 0 12px!important;background:none!important;border:0!important;overflow:visible}
+#matches article.card .team-name{display:flex;flex-direction:column;align-items:center;text-align:center!important;gap:7px;min-width:0;font-size:clamp(13px,3.5vw,18px)!important;font-weight:800;line-height:1.22;overflow-wrap:anywhere}
+#matches article.card .team-name::before{content:'⚽';display:grid;place-items:center;width:clamp(48px,14vw,75px);height:clamp(58px,16vw,85px);border-radius:14px 14px 28px 28px;background:repeating-linear-gradient(90deg,#05703d 0 15px,#fff 15px 29px);border:3px solid #173628;font-size:30px;box-shadow:0 3px 8px #0002}
+#matches article.card .team-name:last-child::before{background:repeating-linear-gradient(90deg,#b91624 0 15px,#182c25 15px 29px)}
+#matches article.card .score-numbers{display:block;min-width:90px;text-align:center;font-size:clamp(29px,7.5vw,43px)!important;padding:10px 9px;border-radius:15px;background:#edf7f1;color:#103d2a!important;line-height:1.15}
+#matches article.card.is-live .score-numbers{color:#d30c22!important;background:#fff0f1}
+#matches article.card>.match-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+#matches article.card>.match-controls button{margin:0!important;width:100%;min-width:0;font-size:clamp(12px,3.5vw,16px);padding:12px 5px}
+#matches article.card>.match-controls button.danger{grid-column:1/-1}
+#matches article.card>.match-controls button:nth-child(2):not(.danger){background:linear-gradient(135deg,#f2a500,#e8ad0b)}
+#matches article.card details{margin-top:18px;padding-top:15px}
+#matches article.card summary{font-weight:800;color:#142f24}
+@media(max-width:380px){#matches article.card{padding:14px 11px}#matches article.card .score-numbers{min-width:74px;padding:9px 5px}#matches article.card .team-name{font-size:12px!important}}
