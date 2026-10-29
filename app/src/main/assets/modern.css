@@ -74,3 +74,14 @@ nav button{min-height:67px}
 #matches article.card details{margin-top:18px;padding-top:15px}
 #matches article.card summary{font-weight:800;color:#142f24}
 @media(max-width:380px){#matches article.card{padding:14px 11px}#matches article.card .score-numbers{min-width:74px;padding:9px 5px}#matches article.card .team-name{font-size:12px!important}}
+
+/* Végleges kérés: mindkét csapatnál egyszerű focilabda, nagy menü. */
+#matches article.card .team-name::before,
+#matches article.card .team-name:last-child::before{
+ content:'⚽';background:none!important;border:0!important;box-shadow:none!important;
+ width:clamp(54px,16vw,82px);height:clamp(54px,16vw,82px);
+ border-radius:0;font-size:clamp(45px,13vw,70px);line-height:1;
+}
+nav{gap:7px!important;margin:20px 0 26px!important}
+nav button{min-height:90px!important;padding:15px 4px!important;border-radius:17px!important;font-size:clamp(11px,2.7vw,15px)!important}
+@media(max-width:390px){nav button{min-height:83px!important;font-size:11px!important}}
