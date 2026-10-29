@@ -29,6 +29,8 @@ details{margin-top:8px}
 summary{cursor:pointer;font-weight:bold}
 .overlay{position:fixed;inset:0;background:#0009;display:flex;align-items:center;justify-content:center;padding:18px;z-index:1000}
 .dialog{background:white;border-radius:14px;padding:20px;width:100%;max-width:420px;max-height:90vh;overflow:auto;box-shadow:0 6px 30px #0004}
+/* Az üres hibajelzés ne foglaljon helyet a fejléc alatt. */
+.admin-message-card:has(#error:empty){display:none}
 </style>
 <link rel="stylesheet" href="modern.css">
 <script src="megjelenes.js" defer></script>
@@ -41,16 +43,7 @@ summary{cursor:pointer;font-weight:bold}
 </header>
 
 <main>
-<div class="card">
-<div id="status" class="muted">Kapcsolódás a Firebase-hez…</div>
-<div id="login">
-<label>E-mail-cím</label>
-<input id="loginEmail" type="email" autocomplete="username">
-<label>Jelszó</label>
-<input id="loginPassword" type="password" autocomplete="current-password">
-<button onclick="loginEmail()">Adminbelépés</button>
-</div>
-<button id="logout" class="alt hidden" onclick="Android.logout()">Kilépés</button>
+<div class="card admin-message-card" id="adminMessageCard">
 <div id="error" class="error" role="alert"></div>
 </div>
 
@@ -64,6 +57,19 @@ summary{cursor:pointer;font-weight:bold}
 <section id="matches"></section>
 <section id="fixtures" class="hidden"></section>
 <section id="players" class="hidden"></section>
+<section id="adminAccess" class="hidden">
+<div class="card">
+<div id="status" class="muted">Kapcsolódás a Firebase-hez…</div>
+<div id="login">
+<label>E-mail-cím</label>
+<input id="loginEmail" type="email" autocomplete="username">
+<label>Jelszó</label>
+<input id="loginPassword" type="password" autocomplete="current-password">
+<button onclick="loginEmail()">Adminbelépés</button>
+</div>
+<button id="logout" class="alt hidden" onclick="Android.logout()">Kilépés</button>
+</div>
+</section>
 <section id="admin" class="hidden"></section>
 </main>
 
@@ -199,6 +205,7 @@ current=t;
 for(const x of ['matches','fixtures','players','admin']){
 $(x).classList.toggle('hidden',x!==t);
 }
+$('adminAccess').classList.toggle('hidden',t!=='admin');
 render();
 }
 
