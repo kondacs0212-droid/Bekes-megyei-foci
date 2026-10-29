@@ -6,6 +6,9 @@
       const info=card.querySelector(':scope > .muted');
       const state=(info?.textContent||'').split('·').pop().trim();
       card.classList.toggle('is-live',state==='Élő');
+      // Élő meccs és félidő alatt a részletek mindig nyitva maradnak.
+      const details=card.querySelector('details[data-match]');
+      if(details && (state==='Élő'||state==='Félidő') && !details.open){details.open=true;}
       if(card.dataset.decorated==='1')return;
       const score=card.querySelector(':scope > .score');
       const clock=card.querySelector(':scope > div:not(.muted):not(.score) .matchclock');
