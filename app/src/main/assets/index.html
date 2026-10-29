@@ -676,7 +676,7 @@ ${fcmToken?`
 <label>Forduló<input id="round" type="number" min="1"></label>
 <label>Hazai csapat<input id="home"></label>
 <label>Vendégcsapat<input id="away"></label>
-<label>Kezdés<input id="kickoff" placeholder="2026-10-31 14:00"></label>
+<label>Kezdés (dátum és időpont)<input id="kickoff" type="datetime-local" step="60"></label>
 <button onclick="newMatch()">Mérkőzés létrehozása</button>
 </div>
 
@@ -691,7 +691,7 @@ ${fcmToken?`
 function newMatch(){
 const home=$('home').value.trim();
 const away=$('away').value.trim();
-const kickoff=$('kickoff').value.trim();
+const kickoff=$('kickoff').value.trim().replace('T',' ');
 const group=$('mgroup').value.trim();
 const round=Number($('round').value)||null;
 
