@@ -184,7 +184,13 @@ if(event==='matchDeleted'){
 $('error').textContent='A mérkőzés sikeresen törölve.';
 return;
 }
-
+if(event==='playerDeleted'){
+$('error').textContent='A játékos sikeresen törölve.';
+return;
+}
+// Csak a strukturált Firebase-események tartalmaznak JSON-t.
+// Egyéb szöveges visszajelzéseket nem szabad JSON.parse-szal feldolgozni.
+if(!['matches','players','auth'].includes(event))return;
 const v=JSON.parse(raw);
 
 if(event==='matches'){
