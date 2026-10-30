@@ -180,11 +180,12 @@ if(pendingDeleteId&&!matches.some(m=>m.id===pendingDeleteId)){
 cancelDelete();
 }
 }
-if(event==='players')players=v;
+if(event==='players'){players=v;playersLoaded=true;maybeImportKardosRoster();}
 
 if(event==='auth'){
 auth=v;
 isAdmin=!!v.admin;
+maybeImportKardosRoster();
 if(!isAdmin)fcmToken='';
 $('status').textContent=!v.signedIn?
 'Nyilvános nézet • belépés nélkül':
@@ -641,19 +642,25 @@ if(m)el.textContent=clockText(m);
 });
 },1000);
 
+let playersLoaded=false;
+let rosterImportBusy=false;
 const kardosRoster=["TUSJAK CSABA", "KORBELY JÁNOS JÓZSEF", "HORVÁTH ZOLTÁN", "OLÁH ATTILA", "NAGY ISTVÁN DÁNIEL", "MENÁRIK NORBERT", "HÓDI TAMÁS", "KOZSUCH JÁNOS MARCELL", "FÜRI ZOLTÁN", "JURÁK GYÖRGY", "MAGINYECZ MÁTÉ JÁNOS", "KINCSES LEÓ", "KOMÁROMI KRISZTIÁN", "KURUCZ JÁNOS", "FEJES JÁNOS DÁVID", "BAGI ANDRÁS ZSOLT", "BATTA SZABOLCS", "TAMÁSI ISTVÁN", "JANSIK KRISZTIÁN"];
 
-function importKardosRoster(){
-if(!isAdmin)return showMatchMessage('Csak admin tölthet fel játékosokat.');
+function maybeImportKardosRoster(){
+if(!isAdmin||!playersLoaded||rosterImportBusy)return;
+if(localStorage.getItem('kardosRoster2026Imported')==='yes')return;
+rosterImportBusy=true;
 const existing=new Set(players.filter(p=>String(p.team||'').trim().toLocaleLowerCase('hu')==='kardos ksk').map(p=>String(p.name||'').trim().toLocaleLowerCase('hu')));
 const missing=kardosRoster.filter(n=>!existing.has(n.toLocaleLowerCase('hu')));
-if(!missing.length)return showMatchMessage('Mind a 19 kardosi játékos már szerepel a listában.');
-if(!confirm(`A Kardos KSK csapatába ${missing.length} hiányzó játékost veszünk fel. Folytatod?`))return;
-for(const name of missing)Android.savePlayer('',JSON.stringify({name,team:'Kardos KSK'}));
-showMatchMessage(`${missing.length} játékos felvitele elküldve. A lista hamarosan frissül.`);
+if(missing.length){
+  for(const name of missing)Android.savePlayer('',JSON.stringify({name,team:'Kardos KSK'}));
+  showMatchMessage(`${missing.length} Kardos KSK-játékos automatikus felvitele elindult.`);
+}
+localStorage.setItem('kardosRoster2026Imported','yes');
+rosterImportBusy=false;
 }
 
-function editPlayer(id){
+function editRosterPlayer(id){
 if(!isAdmin)return;
 const p=players.find(x=>x.id===id);
 if(!p)return showMatchMessage('A játékos nem található.');
@@ -681,13 +688,16 @@ showMatchMessage('Játékos törlése elküldve.');
 
 function renderPlayers(){
 let out='<h2>Játékosok</h2>';
-if(isAdmin)out+=`<div class="card"><h3>⚽ Kardos KSK játékoskeret</h3><p class="muted">A képről felismert 19 játékos. A gomb csak a hiányzókat tölti fel.</p><button onclick="importKardosRoster()">19 kardosi játékos felvitele</button></div>`;
-out+=players.length?
-[...players].sort((a,b)=>String(a.team||'').localeCompare(String(b.team||''),'hu')||String(a.name||'').localeCompare(String(b.name||''),'hu')).map(p=>`
+
+const existingNames=new Set(players.filter(p=>String(p.team||'').trim().toLocaleLowerCase('hu')==='kardos ksk').map(p=>String(p.name||'').trim().toLocaleLowerCase('hu')));
+const builtIn=localStorage.getItem('kardosRoster2026Imported')==='yes'?[]:kardosRoster.filter(n=>!existingNames.has(n.toLocaleLowerCase('hu'))).map(name=>({name,team:'Kardos KSK',builtin:true}));
+const displayPlayers=[...players,...builtIn];
+out+=displayPlayers.length?
+[...displayPlayers].sort((a,b)=>String(a.team||'').localeCompare(String(b.team||''),'hu')||String(a.name||'').localeCompare(String(b.name||''),'hu')).map(p=>`
 <div class="card">
 <b>${esc(p.name||'Névtelen')}</b>
 <div class="muted">${esc(p.team||'')}</div>
-${isAdmin?`<button class="alt" onclick="editPlayer('${esc(p.id)}')">✏️ Szerkesztés</button><button class="danger" onclick="deletePlayer('${esc(p.id)}')">🗑 Törlés</button>`:''}
+${isAdmin&&!p.builtin?`<button class="alt" onclick="editRosterPlayer('${esc(p.id)}')">✏️ Szerkesztés</button><button class="danger" onclick="deletePlayer('${esc(p.id)}')">🗑 Törlés</button>`:''}
 </div>`).join(''):
 '<div class="card">Még nincsenek felvitt játékosok.</div>';
 $('players').innerHTML=out;
