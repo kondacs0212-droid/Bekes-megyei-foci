@@ -641,17 +641,55 @@ if(m)el.textContent=clockText(m);
 });
 },1000);
 
+const kardosRoster=["TUSJAK CSABA", "KORBELY JÁNOS JÓZSEF", "HORVÁTH ZOLTÁN", "OLÁH ATTILA", "NAGY ISTVÁN DÁNIEL", "MENÁRIK NORBERT", "HÓDI TAMÁS", "KOZSUCH JÁNOS MARCELL", "FÜRI ZOLTÁN", "JURÁK GYÖRGY", "MAGINYECZ MÁTÉ JÁNOS", "KINCSES LEÓ", "KOMÁROMI KRISZTIÁN", "KURUCZ JÁNOS", "FEJES JÁNOS DÁVID", "BAGI ANDRÁS ZSOLT", "BATTA SZABOLCS", "TAMÁSI ISTVÁN", "JANSIK KRISZTIÁN"];
+
+function importKardosRoster(){
+if(!isAdmin)return showMatchMessage('Csak admin tölthet fel játékosokat.');
+const existing=new Set(players.filter(p=>String(p.team||'').trim().toLocaleLowerCase('hu')==='kardos ksk').map(p=>String(p.name||'').trim().toLocaleLowerCase('hu')));
+const missing=kardosRoster.filter(n=>!existing.has(n.toLocaleLowerCase('hu')));
+if(!missing.length)return showMatchMessage('Mind a 19 kardosi játékos már szerepel a listában.');
+if(!confirm(`A Kardos KSK csapatába ${missing.length} hiányzó játékost veszünk fel. Folytatod?`))return;
+for(const name of missing)Android.savePlayer('',JSON.stringify({name,team:'Kardos KSK'}));
+showMatchMessage(`${missing.length} játékos felvitele elküldve. A lista hamarosan frissül.`);
+}
+
+function editPlayer(id){
+if(!isAdmin)return;
+const p=players.find(x=>x.id===id);
+if(!p)return showMatchMessage('A játékos nem található.');
+const name=prompt('Játékos neve:',p.name||'');
+if(name===null)return;
+if(!name.trim())return showMatchMessage('A név nem lehet üres.');
+const team=prompt('Csapat:',p.team||'');
+if(team===null)return;
+if(!team.trim())return showMatchMessage('A csapat nem lehet üres.');
+const copy={...p,name:name.trim(),team:team.trim()};
+delete copy.id;
+Android.savePlayer(id,JSON.stringify(copy));
+showMatchMessage('Játékos módosítása elküldve.');
+}
+
+function deletePlayer(id){
+if(!isAdmin)return;
+const p=players.find(x=>x.id===id);
+if(!p)return;
+if(!confirm(`Biztosan törlöd a játékost?\n${p.name} – ${p.team}`))return;
+if(typeof Android.deletePlayer!=='function')return showMatchMessage('A játékos törléséhez az új MainActivity.java is szükséges.');
+Android.deletePlayer(id);
+showMatchMessage('Játékos törlése elküldve.');
+}
+
 function renderPlayers(){
 let out='<h2>Játékosok</h2>';
-
+if(isAdmin)out+=`<div class="card"><h3>⚽ Kardos KSK játékoskeret</h3><p class="muted">A képről felismert 19 játékos. A gomb csak a hiányzókat tölti fel.</p><button onclick="importKardosRoster()">19 kardosi játékos felvitele</button></div>`;
 out+=players.length?
-players.map(p=>`
+[...players].sort((a,b)=>String(a.team||'').localeCompare(String(b.team||''),'hu')||String(a.name||'').localeCompare(String(b.name||''),'hu')).map(p=>`
 <div class="card">
 <b>${esc(p.name||'Névtelen')}</b>
 <div class="muted">${esc(p.team||'')}</div>
+${isAdmin?`<button class="alt" onclick="editPlayer('${esc(p.id)}')">✏️ Szerkesztés</button><button class="danger" onclick="deletePlayer('${esc(p.id)}')">🗑 Törlés</button>`:''}
 </div>`).join(''):
 '<div class="card">Még nincsenek felvitt játékosok.</div>';
-
 $('players').innerHTML=out;
 }
 
