@@ -188,6 +188,19 @@ if(event==='playerDeleted'){
 $('error').textContent='A játékos sikeresen törölve.';
 return;
 }
+if(event==='updateStatus'){
+const box=$('updateStatus');
+if(box)box.textContent=String(raw||'');
+return;
+}
+if(event==='updateAvailable'){
+let info=JSON.parse(raw);
+const box=$('updateStatus');
+if(box)box.textContent='Új verzió: '+info.version+' – megnyithatod a letöltési oldalt.';
+const btn=$('updateDownload');
+if(btn){btn.classList.remove('hidden');btn.dataset.url=info.url;}
+return;
+}
 // Csak a strukturált Firebase-események tartalmaznak JSON-t.
 // Egyéb szöveges visszajelzéseket nem szabad JSON.parse-szal feldolgozni.
 if(!['matches','players','auth'].includes(event))return;
@@ -754,8 +767,28 @@ function copyFcmToken(){
 if(fcmToken)Android.copyFcmToken(fcmToken);
 }
 
+function checkForUpdates(){
+const box=$('updateStatus');
+if(box)box.textContent='Frissítések ellenőrzése…';
+const btn=$('updateDownload');
+if(btn){btn.classList.add('hidden');btn.dataset.url='';}
+if(typeof Android.checkForUpdates==='function')Android.checkForUpdates();
+else if(box)box.textContent='Ez a funkció csak az új APK-ban érhető el.';
+}
+function openUpdateDownload(){
+const url=$('updateDownload')?.dataset.url||'';
+if(url&&typeof Android.openUpdatePage==='function')Android.openUpdatePage(url);
+}
+
 function renderAdmin(){
-$('admin').innerHTML='<h2>Adminisztráció</h2>'+
+$('admin').innerHTML='<h2>Adminisztráció</h2>'+`
+<div class="card">
+<h3>🔄 Alkalmazásfrissítés</h3>
+<p class="muted">A GitHubon megjelent legújabb verzió ellenőrzése.</p>
+<button onclick="checkForUpdates()">🔄 Frissítés keresése</button>
+<p id="updateStatus" class="muted" aria-live="polite"></p>
+<button id="updateDownload" class="hidden" onclick="openUpdateDownload()">📲 Letöltési oldal megnyitása</button>
+</div>`+
 (!isAdmin?
 '<p>Csak jóváhagyott adminok rögzíthetnek eredményt.</p>':
 `
