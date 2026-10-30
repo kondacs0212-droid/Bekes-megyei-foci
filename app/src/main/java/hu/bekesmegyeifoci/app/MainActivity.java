@@ -10,6 +10,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.io.InputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -18,6 +19,7 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.*;
 import com.google.firebase.messaging.FirebaseMessaging;
 import org.json.JSONArray;
@@ -26,6 +28,8 @@ import java.util.*;
 
 public class MainActivity extends Activity {
   private static final int NOTIFICATION_PERMISSION_REQUEST = 1001;
+  private static final String NOTIFICATION_WORKER_URL =
+      "https://foci-ertesites-indit.kondacs0212.workers.dev/";
   private WebView web;
   private final FirebaseFirestore db = FirebaseFirestore.getInstance();
   private final FirebaseAuth auth = FirebaseAuth.getInstance();
@@ -115,6 +119,45 @@ public class MainActivity extends Activity {
   private static int numericVersionPart(String value) {
     try { return Integer.parseInt(value.replaceAll("[^0-9].*$", "")); }
     catch (Exception ignored) { return 0; }
+  }
+
+  // A Firebase-mentés sikeres befejezése után indítjuk az értesítési ellenőrzést.
+  // A Worker csak a jogosult admin Firebase ID tokenjét fogadja el.
+  private void triggerNotifications() {
+    FirebaseUser user = auth.getCurrentUser();
+    if (user == null) return;
+    user.getIdToken(false)
+      .addOnSuccessListener(result -> {
+        String token = result.getToken();
+        if (token == null || token.isEmpty()) {
+          send("error", "Értesítésindítás: nem sikerült Firebase tokent lekérni.");
+          return;
+        }
+        new Thread(() -> {
+          HttpURLConnection conn = null;
+          try {
+            conn = (HttpURLConnection) new URL(NOTIFICATION_WORKER_URL).openConnection();
+            conn.setRequestMethod("POST");
+            conn.setConnectTimeout(12000);
+            conn.setReadTimeout(12000);
+            conn.setRequestProperty("Authorization", "Bearer " + token);
+            conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+            conn.setDoOutput(true);
+            try (OutputStream output = conn.getOutputStream()) {
+              output.write("{}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            }
+            int status = conn.getResponseCode();
+            if (status < 200 || status >= 300) {
+              send("error", "Értesítésindítás sikertelen (Cloudflare HTTP " + status + ").");
+            }
+          } catch (Exception e) {
+            send("error", "Értesítésindítási hálózati hiba: " + e.getMessage());
+          } finally {
+            if (conn != null) conn.disconnect();
+          }
+        }).start();
+      })
+      .addOnFailureListener(e -> send("error", "Értesítésindítás: Firebase tokenhiba: " + e.getMessage()));
   }
 
   public class Bridge {
@@ -223,7 +266,7 @@ public class MainActivity extends Activity {
     @JavascriptInterface public void savePlayer(String id, String json) { save("players", id, json); }
     @JavascriptInterface public void deletePlayer(String id) {
       if (id == null || id.trim().isEmpty()) { send("error", "Hiányzik a játékos azonosítója."); return; }
-      com.google.firebase.auth.FirebaseUser user = auth.getCurrentUser();
+      FirebaseUser user = auth.getCurrentUser();
       if (user == null) { send("error", "A törléshez adminbelépés szükséges."); return; }
       db.collection("admins").document(user.getUid()).get()
         .addOnSuccessListener(doc -> {
@@ -239,7 +282,7 @@ public class MainActivity extends Activity {
         send("error", "Hiányzik a mérkőzés azonosítója.");
         return;
       }
-      com.google.firebase.auth.FirebaseUser user = auth.getCurrentUser();
+      FirebaseUser user = auth.getCurrentUser();
       if (user == null) {
         send("error", "A törléshez adminbelépés szükséges.");
         return;
@@ -261,10 +304,15 @@ public class MainActivity extends Activity {
       try {
         JSONObject j = new JSONObject(json);
         Map<String, Object> data = toMap(j);
+        boolean isMatch = "matches".equals(collection);
         if (id == null || id.isEmpty())
-          db.collection(collection).add(data).addOnFailureListener(e -> send("error", e.getMessage()));
+          db.collection(collection).add(data)
+            .addOnSuccessListener(ref -> { if (isMatch) triggerNotifications(); })
+            .addOnFailureListener(e -> send("error", e.getMessage()));
         else
-          db.collection(collection).document(id).set(data).addOnFailureListener(e -> send("error", e.getMessage()));
+          db.collection(collection).document(id).set(data)
+            .addOnSuccessListener(v -> { if (isMatch) triggerNotifications(); })
+            .addOnFailureListener(e -> send("error", e.getMessage()));
       } catch (Exception e) { send("error", e.getMessage()); }
     }
   }
