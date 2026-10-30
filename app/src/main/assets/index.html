@@ -114,6 +114,19 @@ summary{cursor:pointer;font-weight:bold}
 </div>
 </div>
 
+<div id="playerOverlay" class="overlay hidden" role="dialog" aria-modal="true">
+<div class="dialog">
+<h2 id="playerDialogTitle">Játékos szerkesztése</h2>
+<p id="playerDialogInfo"></p>
+<div id="playerEditFields">
+<label>Játékos neve</label><input id="playerNameInput" autocomplete="off">
+<label>Csapat</label><input id="playerTeamInput" autocomplete="off">
+</div>
+<button id="playerConfirmButton" onclick="confirmPlayerAction()">Mentés</button>
+<button class="alt" onclick="closePlayerDialog()">Mégse</button>
+</div>
+</div>
+
 <script>
 let matches=[];
 let players=[];
@@ -660,30 +673,54 @@ localStorage.setItem('kardosRoster2026Imported','yes');
 rosterImportBusy=false;
 }
 
+let playerAction=null;
+function closePlayerDialog(){
+playerAction=null;
+$('playerOverlay').classList.add('hidden');
+}
 function editRosterPlayer(id){
-if(!isAdmin)return;
+if(!isAdmin)return showMatchMessage('Adminbelépés szükséges.');
+const p=players.find(x=>x.id===id);
+if(!p)return showMatchMessage('A játékos még nincs elmentve az adatbázisba.');
+playerAction={type:'edit',id};
+$('playerDialogTitle').textContent='Játékos szerkesztése';
+$('playerDialogInfo').textContent='';
+$('playerEditFields').classList.remove('hidden');
+$('playerNameInput').value=p.name||'';
+$('playerTeamInput').value=p.team||'';
+$('playerConfirmButton').textContent='💾 Mentés';
+$('playerOverlay').classList.remove('hidden');
+}
+function deletePlayer(id){
+if(!isAdmin)return showMatchMessage('Adminbelépés szükséges.');
+const p=players.find(x=>x.id===id);
+if(!p)return showMatchMessage('A játékos még nincs elmentve az adatbázisba.');
+playerAction={type:'delete',id};
+$('playerDialogTitle').textContent='Játékos törlése';
+$('playerDialogInfo').textContent=`Biztosan törlöd? ${p.name} – ${p.team||''}`;
+$('playerEditFields').classList.add('hidden');
+$('playerConfirmButton').textContent='🗑 Igen, törlés';
+$('playerOverlay').classList.remove('hidden');
+}
+function confirmPlayerAction(){
+if(!playerAction||!isAdmin)return;
+const {type,id}=playerAction;
+if(type==='edit'){
+const name=$('playerNameInput').value.trim();
+const team=$('playerTeamInput').value.trim();
+if(!name||!team)return showMatchMessage('A név és a csapat kötelező.');
 const p=players.find(x=>x.id===id);
 if(!p)return showMatchMessage('A játékos nem található.');
-const name=prompt('Játékos neve:',p.name||'');
-if(name===null)return;
-if(!name.trim())return showMatchMessage('A név nem lehet üres.');
-const team=prompt('Csapat:',p.team||'');
-if(team===null)return;
-if(!team.trim())return showMatchMessage('A csapat nem lehet üres.');
-const copy={...p,name:name.trim(),team:team.trim()};
+const copy={...p,name,team};
 delete copy.id;
 Android.savePlayer(id,JSON.stringify(copy));
-showMatchMessage('Játékos módosítása elküldve.');
-}
-
-function deletePlayer(id){
-if(!isAdmin)return;
-const p=players.find(x=>x.id===id);
-if(!p)return;
-if(!confirm(`Biztosan törlöd a játékost?\n${p.name} – ${p.team}`))return;
-if(typeof Android.deletePlayer!=='function')return showMatchMessage('A játékos törléséhez az új MainActivity.java is szükséges.');
+showMatchMessage('Módosítás elküldve.');
+}else{
+if(typeof Android.deletePlayer!=='function')return showMatchMessage('A törlés nem érhető el ebben az APK-ban.');
 Android.deletePlayer(id);
-showMatchMessage('Játékos törlése elküldve.');
+showMatchMessage('Törlés elküldve.');
+}
+closePlayerDialog();
 }
 
 function renderPlayers(){
