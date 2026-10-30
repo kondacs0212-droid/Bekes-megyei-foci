@@ -4,6 +4,12 @@ import android.Manifest;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -92,7 +98,80 @@ public class MainActivity extends Activity {
     });
   }
 
+  private static final String RELEASES_API = "https://api.github.com/repos/kondacs0212-droid/Bekes-foci-frissites/releases/latest";
+  private static final String RELEASES_WEB = "https://github.com/kondacs0212-droid/Bekes-foci-frissites/releases";
+
+  private static int compareVersions(String a, String b) {
+    String[] aa = a.replaceFirst("^[vV]", "").split("\\.");
+    String[] bb = b.replaceFirst("^[vV]", "").split("\\.");
+    for (int i = 0; i < Math.max(aa.length, bb.length); i++) {
+      int x = i < aa.length ? numericVersionPart(aa[i]) : 0;
+      int y = i < bb.length ? numericVersionPart(bb[i]) : 0;
+      if (x != y) return Integer.compare(x, y);
+    }
+    return 0;
+  }
+
+  private static int numericVersionPart(String value) {
+    try { return Integer.parseInt(value.replaceAll("[^0-9].*$", "")); }
+    catch (Exception ignored) { return 0; }
+  }
+
   public class Bridge {
+    @JavascriptInterface public void checkForUpdates() {
+      new Thread(() -> {
+        HttpURLConnection conn = null;
+        try {
+          conn = (HttpURLConnection) new URL(RELEASES_API).openConnection();
+          conn.setConnectTimeout(12000);
+          conn.setReadTimeout(12000);
+          conn.setRequestProperty("Accept", "application/vnd.github+json");
+          conn.setRequestProperty("User-Agent", "BekesMegyeiFoci-Android");
+          if (conn.getResponseCode() != 200) throw new Exception("GitHub válasz: " + conn.getResponseCode());
+          ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+          try (InputStream input = conn.getInputStream()) {
+            byte[] buffer = new byte[4096]; int n;
+            while ((n = input.read(buffer)) != -1) {
+              bytes.write(buffer, 0, n);
+              if (bytes.size() > 1024 * 1024) throw new Exception("Túl nagy válasz.");
+            }
+          }
+          JSONObject release = new JSONObject(bytes.toString("UTF-8"));
+          String tag = release.optString("tag_name", "");
+          if (tag.isEmpty()) throw new Exception("Nem található verziószám.");
+          String currentVersion = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+          if (compareVersions(tag, currentVersion) <= 0) {
+            send("updateStatus", "Az alkalmazás naprakész (" + currentVersion + ").");
+            return;
+          }
+          JSONArray assets = release.optJSONArray("assets");
+          boolean hasApk = false;
+          if (assets != null) for (int i = 0; i < assets.length(); i++) {
+            if (assets.optJSONObject(i).optString("name", "").toLowerCase(Locale.ROOT).endsWith(".apk")) hasApk = true;
+          }
+          if (!hasApk) {
+            send("updateStatus", "Új verzió (" + tag + ") található, de még nincs hozzá APK feltöltve.");
+            return;
+          }
+          JSONObject result = new JSONObject();
+          result.put("version", tag);
+          String page = release.optString("html_url", RELEASES_WEB);
+          if (!page.startsWith(RELEASES_WEB + "/tag/")) page = RELEASES_WEB;
+          result.put("url", page);
+          send("updateAvailable", result.toString());
+        } catch (Exception e) {
+          send("updateStatus", "Nem sikerült ellenőrizni a frissítést: " + e.getMessage());
+        } finally { if (conn != null) conn.disconnect(); }
+      }).start();
+    }
+
+    @JavascriptInterface public void openUpdatePage(String url) {
+      if (url == null || !url.startsWith(RELEASES_WEB + "/tag/")) return;
+      runOnUiThread(() -> {
+        try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); }
+        catch (Exception e) { send("updateStatus", "Nem sikerült megnyitni a letöltési oldalt."); }
+      });
+    }
     @JavascriptInterface public void getFcmToken() {
       runOnUiThread(() -> {
         if (auth.getCurrentUser() == null) {
