@@ -51,6 +51,9 @@ summary{cursor:pointer;font-weight:bold}
 </style>
 <link rel="stylesheet" href="modern.css">
 <style>
+/* Finom zöld elválasztó az események között. */
+.match-event-row + .match-event-row{position:relative;margin-top:9px}
+.match-event-row + .match-event-row::before{content:"";position:absolute;top:-10px;left:7px;right:7px;height:1px;background:#cde8d5;pointer-events:none}
 /* Események: a perc mindig középen, zöld jelölőben jelenik meg. */
 .match-event-score{display:inline-block;margin-top:4px;padding:2px 7px;border:1px solid #168246;border-radius:7px;color:#125f36;background:#f1fbf4;font-size:13px;font-weight:800}
 .match-event-text strong{font-size:13px;line-height:1.3}
