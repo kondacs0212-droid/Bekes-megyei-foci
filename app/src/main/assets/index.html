@@ -17,8 +17,12 @@ button.alt{background:#e3eee7;color:#174e2e}
 button.danger{background:#b42323}
 input,select{width:100%;padding:10px;border:1px solid #baccc0;border-radius:8px;margin:5px 0 12px;font:inherit}
 label{display:block;font-weight:600}
-nav{display:flex;gap:5px;overflow:auto}
-nav button{white-space:nowrap}
+nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:8px 0 12px}
+nav button{white-space:normal;margin:0;padding:8px 5px;font-size:12px;line-height:1.25;min-height:36px;border-radius:8px}
+header{position:relative;padding-right:100px}
+header h1{font-size:clamp(17px,4.8vw,24px)}
+.header-admin{position:absolute;top:12px;right:12px;background:#e5f3e9;color:#125c32;border:1px solid #b4d9c1;padding:7px 9px;margin:0;font-size:12px;font-weight:700;border-radius:9px}
+@media(min-width:550px){nav{grid-template-columns:repeat(4,minmax(0,1fr))}nav button{font-size:13px}}
 .hidden{display:none!important}
 .muted{color:#6a7d71;font-size:13px}
 .score{font-size:23px;font-weight:800}
@@ -72,6 +76,7 @@ summary{cursor:pointer;font-weight:bold}
 <body>
 
 <header>
+<button class="header-admin" onclick="tab('admin')" aria-label="Adminisztráció megnyitása">⚙️ Admin</button>
 <h1>⚽ Békés megyei foci</h1>
 <small>Élő szöveges közvetítés és értesítések</small>
 </header>
@@ -86,7 +91,6 @@ summary{cursor:pointer;font-weight:bold}
 <button onclick="tab('fixtures')">Következő meccsek</button>
 <button onclick="tab('finished')">🏁 Befejezett meccsek</button>
 <button onclick="tab('players')">Játékosok</button>
-<button onclick="tab('admin')">Admin</button>
 </nav>
 
 <section id="matches"></section>
