@@ -19,9 +19,9 @@ input,select{width:100%;padding:10px;border:1px solid #baccc0;border-radius:8px;
 label{display:block;font-weight:600}
 nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:8px 0 12px}
 nav button{white-space:normal;margin:0;padding:8px 5px;font-size:12px;line-height:1.25;min-height:36px;border-radius:8px}
-header{position:relative;padding-right:100px}
+header{position:relative;padding:18px 16px 9px;display:flex;flex-direction:column;align-items:stretch}
 header h1{font-size:clamp(17px,4.8vw,24px)}
-.header-admin{position:absolute;top:12px;right:12px;background:#e5f3e9;color:#125c32;border:1px solid #b4d9c1;padding:7px 9px;margin:0;font-size:12px;font-weight:700;border-radius:9px}
+.header-admin{position:relative;align-self:flex-end;z-index:5;cursor:pointer;touch-action:manipulation;background:#e5f3e9;color:#125c32;border:1px solid #b4d9c1;padding:7px 9px;margin:0;font-size:12px;font-weight:700;border-radius:9px}
 @media(min-width:550px){nav{grid-template-columns:repeat(4,minmax(0,1fr))}nav button{font-size:13px}}
 .hidden{display:none!important}
 .muted{color:#6a7d71;font-size:13px}
@@ -76,9 +76,9 @@ summary{cursor:pointer;font-weight:bold}
 <body>
 
 <header>
-<button class="header-admin" onclick="tab('admin')" aria-label="Adminisztráció megnyitása">⚙️ Admin</button>
 <h1>⚽ Békés megyei foci</h1>
 <small>Élő szöveges közvetítés és értesítések</small>
+<button type="button" id="headerAdminButton" class="header-admin" onclick="openAdminMenu()" aria-label="Adminisztráció megnyitása">⚙️ Admin</button>
 </header>
 
 <main>
@@ -270,6 +270,12 @@ render();
 }catch(e){
 $('error').textContent=e.message;
 }
+}
+
+function openAdminMenu(){
+tab('admin');
+const panel=document.getElementById('adminAccess');
+if(panel)panel.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 function tab(t){
