@@ -55,6 +55,13 @@ summary{cursor:pointer;font-weight:bold}
 </style>
 <link rel="stylesheet" href="modern.css">
 <style>
+/* Csapatok egymás mellett, középen a végeredmény. */
+.match-scoreboard{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;margin:16px 0;font-size:clamp(13px,3.2vw,19px);line-height:1.25}
+.match-scoreboard .score-team{min-width:0;overflow-wrap:anywhere;font-weight:800}
+.match-scoreboard .score-home{text-align:left}
+.match-scoreboard .score-away{text-align:right}
+.match-scoreboard .score-numbers{white-space:nowrap;color:#126b39;font-size:clamp(20px,5vw,28px);font-weight:900;text-align:center}
+@media(max-width:380px){.match-scoreboard{gap:5px;font-size:13px}.match-scoreboard .score-numbers{font-size:20px}}
 /* Finom zöld elválasztó az események között. */
 .match-event-row + .match-event-row{position:relative;margin-top:9px}
 .match-event-row + .match-event-row::before{content:"";position:absolute;top:-10px;left:7px;right:7px;height:1px;background:#cde8d5;pointer-events:none}
@@ -418,9 +425,10 @@ ${esc(m.group||'Csoport nélkül')}
 ${state==='Élő'?'<strong style="color:#c52222">🔴 ÉLŐ</strong>':''}
 <span class="matchclock" data-id="${id}">${esc(clockText(m))}</span>
 </div>
-<div class="score">
-${esc(m.home)} ${esc(m.homeScore??0)} :
-${esc(m.awayScore??0)} ${esc(m.away)}
+<div class="score match-scoreboard">
+<span class="score-team score-home">${esc(m.home)}</span>
+<span class="score-numbers">${esc(m.homeScore??0)} : ${esc(m.awayScore??0)}</span>
+<span class="score-team score-away">${esc(m.away)}</span>
 </div>
 ${controls}
 <details data-match="${id}" ${openDetails.has(m.id)?'open':''}
