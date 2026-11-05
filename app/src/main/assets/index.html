@@ -50,6 +50,15 @@ summary{cursor:pointer;font-weight:bold}
 @media(max-width:380px){.match-event-row{grid-template-columns:minmax(0,1fr) 38px minmax(0,1fr);gap:4px}.match-event-item{padding:8px 5px;gap:4px}.match-event-icon{font-size:19px}.match-event-text{font-size:12px}.match-event-text strong{font-size:12px}}
 </style>
 <link rel="stylesheet" href="modern.css">
+<style>
+/* Események: a perc mindig középen, zöld jelölőben jelenik meg. */
+.match-event-row{display:grid;grid-template-columns:minmax(0,1fr) 54px minmax(0,1fr);align-items:center;gap:7px}
+.match-event-minute{grid-column:2;grid-row:1;justify-self:center;align-self:center;display:flex;align-items:center;justify-content:center;min-width:46px;min-height:38px;padding:5px 6px;border-radius:12px;background:#dcefe3;color:#126b39;font-size:15px;font-weight:800;line-height:1.1;text-align:center;white-space:nowrap}
+.match-event-item.home{grid-column:1;grid-row:1}
+.match-event-item.away{grid-column:3;grid-row:1}
+.match-event-unknown{grid-column:1 / 4;grid-row:2}
+@media(max-width:380px){.match-event-row{grid-template-columns:minmax(0,1fr) 46px minmax(0,1fr);gap:4px}.match-event-minute{min-width:42px;min-height:34px;font-size:13px;padding:4px}}
+</style>
 <script src="megjelenes.js" defer></script>
 </head>
 <body>
