@@ -84,12 +84,14 @@ summary{cursor:pointer;font-weight:bold}
 <nav>
 <button onclick="tab('matches')">Mérkőzések</button>
 <button onclick="tab('fixtures')">Következő meccsek</button>
+<button onclick="tab('finished')">🏁 Befejezett meccsek</button>
 <button onclick="tab('players')">Játékosok</button>
 <button onclick="tab('admin')">Admin</button>
 </nav>
 
 <section id="matches"></section>
 <section id="fixtures" class="hidden"></section>
+<section id="finished" class="hidden"></section>
 <section id="players" class="hidden"></section>
 <section id="adminAccess" class="hidden">
 <div class="card">
@@ -268,7 +270,7 @@ $('error').textContent=e.message;
 
 function tab(t){
 current=t;
-for(const x of ['matches','fixtures','players','admin']){
+for(const x of ['matches','fixtures','finished','players','admin']){
 $(x).classList.toggle('hidden',x!==t);
 }
 $('adminAccess').classList.toggle('hidden',t!=='admin');
@@ -276,7 +278,8 @@ render();
 }
 
 function render(){
-renderMatches();
+renderMatches(false);
+renderMatches(true);
 renderFixtures();
 renderPlayers();
 renderAdmin();
@@ -323,14 +326,15 @@ names.map(name=>
 ).join('');
 }
 
-function renderMatches(){
-let out='<h2>Mérkőzések</h2>';
+function renderMatches(finished=false){
+const visibleMatches=matches.filter(m=>isFinished(m)===finished);
+let out=finished?'<h2>🏁 Befejezett meccsek</h2>':'<h2>Mérkőzések</h2>';
 
-if(!matches.length){
-out+='<p class="muted">Még nincsenek mérkőzések.</p>';
+if(!visibleMatches.length){
+out+=finished?'<p class="muted">Még nincsenek befejezett mérkőzések.</p>':'<p class="muted">Nincs folyamatban lévő vagy tervezett mérkőzés.</p>';
 }
 
-for(const m of matches){
+for(const m of visibleMatches){
 const ev=Array.isArray(m.events)?m.events:[];
 const state=m.status||'Tervezett';
 const id=esc(m.id);
@@ -447,9 +451,9 @@ ${canAdd?`
 </article>`;
 }
 
-$('matches').innerHTML=out;
+$(finished?'finished':'matches').innerHTML=out;
 
-for(const m of matches){
+for(const m of visibleMatches){
 const select=$('player-'+m.id);
 if(select)refreshNewPlayers(m.id);
 }
