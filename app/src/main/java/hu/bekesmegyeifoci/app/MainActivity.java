@@ -330,6 +330,8 @@ public class MainActivity extends Activity {
         }
         v = l;
       }
+      // A JSON null értéke nem menthető közvetlenül Firestore-ba.
+      if (v == JSONObject.NULL) v = null;
       m.put(k, v);
     }
     return m;
