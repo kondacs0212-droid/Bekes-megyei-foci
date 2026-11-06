@@ -90,6 +90,12 @@ summary{cursor:pointer;font-weight:bold}
 .match-event-item.away{grid-column:3;grid-row:1}
 .match-event-unknown{grid-column:1 / 4;grid-row:2}
 @media(max-width:380px){.match-event-row{grid-template-columns:minmax(0,1fr) 46px minmax(0,1fr);gap:4px}.match-event-minute{min-width:42px;min-height:34px;font-size:13px;padding:4px}}
+
+/* Csapatcímerek – kizárólag megjelenítés; a mentési és értesítési logika változatlan. */
+.team-crest{width:34px;height:34px;object-fit:contain;vertical-align:middle;flex-shrink:0}
+.team-crest-small{width:23px;height:23px;object-fit:contain;vertical-align:middle;margin-right:5px}
+.score-team .team-crest{display:block;margin:0 auto 5px}
+.score-home .team-crest{margin-left:0}.score-away .team-crest{margin-right:0}
 </style>
 <script src="megjelenes.js" defer></script>
 </head>
@@ -356,6 +362,27 @@ names.map(name=>
 ).join('');
 }
 
+
+// A felhasználó által küldött Sofascore-képernyőképből kivágott címerek.
+// Kardos: a külön kért MLSZ-címer. Kizárólag megjelenítés, nincs hálózati kérés.
+const TEAM_CREST_FILES = [
+  {file:'csorvasi.png', names:['csorvas']},
+  {file:'kunagotai.png', names:['kunagota']},
+  {file:'mezomegyer_ii.png', names:['mezomegyer']},
+  {file:'csardaszallasi.png', names:['csardaszallas']},
+  {file:'medgyesbodzas.png', names:['medgyesbodzas']},
+  {file:'medgyesegyhaza.png', names:['medgyesegyhaza']},
+  {file:'telekgerendasi.png', names:['telekgerendas']},
+  {file:'kardos_ormenykut.png', names:['kardos','ormeny kut','ormeny kut']},
+  {file:'kevermes.png', names:['kevermes']}
+];
+function teamCrest(name, small=false){
+  const key=String(name||'').toLocaleLowerCase('hu').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const match=TEAM_CREST_FILES.find(t=>t.names.some(n=>key.includes(n)));
+  if(!match)return '';
+  return `<img class="${small?'team-crest-small':'team-crest'}" src="cimerek/${match.file}" alt="" loading="lazy" onerror="this.style.display='none'">`;
+}
+
 function renderMatches(finished=false){
 const visibleMatches=matches.filter(m=>isFinished(m)===finished);
 let out=finished?'<h2>🏁 Befejezett meccsek</h2>':'<h2>Mérkőzések</h2>';
@@ -439,9 +466,9 @@ ${state==='Élő'?'<strong style="color:#c52222">🔴 ÉLŐ</strong>':''}
 <span class="matchclock" data-id="${id}">${esc(clockText(m))}</span>
 </div>
 <div class="score match-scoreboard">
-<span class="score-team score-home">${esc(m.home)}</span>
+<span class="score-team score-home">${teamCrest(m.home)}${esc(m.home)}</span>
 <span class="score-numbers">${esc(m.homeScore??0)} : ${esc(m.awayScore??0)}</span>
-<span class="score-team score-away">${esc(m.away)}</span>
+<span class="score-team score-away">${teamCrest(m.away)}${esc(m.away)}</span>
 </div>
 ${controls}
 <details data-match="${id}" ${openDetails.has(m.id)?'open':''}
@@ -844,7 +871,7 @@ out+='<div class="card">Még nincsenek felvitt játékosok.</div>';
 for(const team of [...groups.keys()].sort((a,b)=>a.localeCompare(b,'hu'))){
 const roster=groups.get(team).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'hu'));
 out+=`<details class="card player-team" data-team="${esc(team)}" ${openPlayerTeams.has(team)?'open':''} ontoggle="rememberPlayerTeam(this)">
-<summary class="player-team-summary"><span>⚽ ${esc(team)}</span><span class="player-team-count">${roster.length} játékos</span></summary>
+<summary class="player-team-summary"><span>${teamCrest(team,true)}${esc(team)}</span><span class="player-team-count">${roster.length} játékos</span></summary>
 <div class="player-team-roster">${roster.map(p=>`<div class="player-roster-row">
 <b>${esc(p.name||'Névtelen')}</b>
 ${isAdmin?`<div class="player-roster-actions"><button class="alt" onclick="editRosterPlayer('${esc(p.id)}')">✏️ Szerkesztés</button><button class="danger" onclick="deletePlayer('${esc(p.id)}')">🗑 Törlés</button></div>`:''}
@@ -1013,7 +1040,7 @@ out+=upcoming.map(m=>`
 ${esc(m.group||'Csoport nélkül')}
 ${m.round?'· '+esc(m.round)+'. forduló':''}
 </div>
-<b>${esc(m.home||'?')} – ${esc(m.away||'?')}</b>
+<b>${teamCrest(m.home,true)}${esc(m.home||'?')} – ${teamCrest(m.away,true)}${esc(m.away||'?')}</b>
 <div>${esc(m.kickoff||'Időpont még nincs')}</div>
 <div class="muted">${esc(m.status||'Tervezett')}</div>
 </div>
