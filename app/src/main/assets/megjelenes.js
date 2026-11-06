@@ -1,6 +1,37 @@
 /* Csak a mérkőzéskártyák külsejét rendezi át; a működő eseménykezelőket nem módosítja. */
 (function(){
   function el(tag,cls,text){const n=document.createElement(tag);n.className=cls;if(text!==undefined)n.textContent=text;return n;}
+  // Csak a kilenc deli csoport csapatcimere. Minden mas funkcio valtozatlan.
+  const crestFiles={
+    'csardaszallasi':'csardaszallasi.png',
+    'csorvasi':'csorvasi.png',
+    'kardos':'kardos_ormenykut.png',
+    'kevermes':'kevermes.png',
+    'kunagotai':'kunagotai.png',
+    'medgyesbodzas':'medgyesbodzas.png',
+    'medgyesegyhaza':'medgyesegyhaza.png',
+    'mezomegyer':'mezomegyer_ii.png',
+    'telekgerendasi':'telekgerendasi.png'
+  };
+  function crestFor(name){
+    const key=String(name||'').toLocaleLowerCase('hu').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const prefix=Object.keys(crestFiles).find(k=>key.includes(k));
+    return prefix?'cimerek/'+crestFiles[prefix]:null;
+  }
+  function teamWithCrest(name){
+    const team=el('span','team-name',name);
+    const src=crestFor(name);
+    if(src){
+      const img=document.createElement('img');
+      img.className='team-crest-img';img.src=src;img.alt=name+' cimere';
+      img.onerror=()=>{img.remove();team.classList.remove('crest-loaded');};
+      team.prepend(img);team.classList.add('crest-loaded');
+    }
+    return team;
+  }
+  const crestStyle=document.createElement('style');
+  crestStyle.textContent='#matches article.card .team-name.crest-loaded::before{content:none!important;display:none!important}#matches article.card .team-crest-img{display:block;width:clamp(54px,16vw,82px);height:clamp(54px,16vw,82px);object-fit:contain;flex:none}';
+  document.head.append(crestStyle);
   function decorate(){
     document.querySelectorAll('#matches article.card').forEach(card=>{
       const info=card.querySelector(':scope > .muted');
@@ -21,7 +52,7 @@
       const oldClockContainer=clock.parentElement;
       top.append(clock);
       oldClockContainer.replaceWith(top);
-      score.replaceChildren(el('span','team-name',match[1].trim()),el('span','score-numbers',match[2]+' : '+match[3]),el('span','team-name',match[4].trim()));
+      score.replaceChildren(teamWithCrest(match[1].trim()),el('span','score-numbers',match[2]+' : '+match[3]),teamWithCrest(match[4].trim()));
       const controls=el('div','match-controls');
       while(score.nextElementSibling?.tagName==='BUTTON')controls.append(score.nextElementSibling);
       if(controls.children.length)score.after(controls);
