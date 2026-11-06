@@ -876,6 +876,8 @@ const url=$('updateDownload')?.dataset.url||'';
 if(url&&typeof Android.openUpdatePage==='function')Android.openUpdatePage(url);
 }
 
+const SOUTH_TEAMS=['Csárdaszállási SZSK','Csorvási SK','Kardos-Örménykút KSK','Kevermes SE','Kunágotai TE','Medgyesbodzás SE','Medgyesegyháza SE','Mezőmegyer SE II.','Telekgerendási SC'];
+
 function renderAdmin(){
 $('admin').innerHTML='<h2>Adminisztráció</h2>'+`
 <div class="card">
@@ -901,8 +903,9 @@ ${fcmToken?`
 <h3>Új mérkőzés</h3>
 <label>Csoport<input id="mgroup" placeholder="Például: Északi csoport"></label>
 <label>Forduló<input id="round" type="number" min="1"></label>
-<label>Hazai csapat<input id="home"></label>
-<label>Vendégcsapat<input id="away"></label>
+<label>Hazai csapat<input id="home" list="southTeams" autocomplete="off" placeholder="Válassz vagy írj csapatnevet"></label>
+<label>Vendégcsapat<input id="away" list="southTeams" autocomplete="off" placeholder="Válassz vagy írj csapatnevet"></label>
+<datalist id="southTeams">${SOUTH_TEAMS.map(name=>`<option value="${esc(name)}"></option>`).join('')}</datalist>
 <label>Kezdés (dátum és időpont)<input id="kickoff" type="datetime-local" step="60"></label>
 <button onclick="newMatch()">Mérkőzés létrehozása</button>
 </div>
