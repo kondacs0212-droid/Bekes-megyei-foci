@@ -1055,6 +1055,7 @@ ${m.round?'· '+esc(m.round)+'. forduló':''}
 <b>${teamCrest(m.home,true)}${esc(m.home||'?')} – ${teamCrest(m.away,true)}${esc(m.away||'?')}</b>
 <div>${esc(m.kickoff||'Időpont még nincs')}</div>
 <div class="muted">${esc(m.status||'Tervezett')}</div>
+${isAdmin?`<button class="danger" onclick="deleteMatch(${esc(JSON.stringify(String(m.id)))})">🗑 Mérkőzés törlése</button>`:''}
 </div>
 `).join('')||'<div class="card">Nincs megjeleníthető mérkőzés.</div>';
 
