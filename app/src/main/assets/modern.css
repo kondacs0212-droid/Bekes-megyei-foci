@@ -1,4 +1,4 @@
-/* Békés megyei foci – kizárólag megjelenés, 2026 */
+l/* Békés megyei foci – kizárólag megjelenés, 2026 */
 :root{--green:#086b3b;--dark:#0b3324;--pale:#eaf5ef;--border:#dbe9e0;--shadow:0 8px 25px rgba(10,55,34,.08)}
 *{box-sizing:border-box}
 body{background:linear-gradient(180deg,#e8f3ed 0,#f5f8f6 420px);color:#173827;font-family:system-ui,-apple-system,Arial,sans-serif;line-height:1.45}
@@ -171,3 +171,17 @@ header .header-admin{
   transform:none!important;
   margin:0!important;
 }
+
+/* Fejléc finomítás: csak a cím szövege kerül az alcím fölé.
+   A felső zöld háttér változatlanul kitölti az állapotsáv mögötti részt. */
+header{
+  grid-template-areas:". ." "brand admin" "subtitle admin"!important;
+  grid-template-rows:minmax(30px,1fr) auto auto!important;
+  min-height:185px!important;
+  padding-top:55px!important;
+  padding-bottom:15px!important;
+  row-gap:4px!important;
+}
+header h1{grid-area:brand!important;align-self:end!important;margin:0!important}
+header small{grid-area:subtitle!important;align-self:end!important;margin:0!important}
+header .header-admin{grid-area:admin!important;align-self:end!important;justify-self:end!important;transform:none!important}
