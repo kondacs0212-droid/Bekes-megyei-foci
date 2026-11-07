@@ -96,6 +96,13 @@ summary{cursor:pointer;font-weight:bold}
 .team-crest-small{width:23px;height:23px;object-fit:contain;vertical-align:middle;margin-right:5px}
 .score-team .team-crest{display:block;margin:0 auto 5px}
 .score-home .team-crest{margin-left:0}.score-away .team-crest{margin-right:0}
+/* Fejléc és alacsony menügombok – csak megjelenítés. */
+header{display:grid!important;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"brand admin" "subtitle subtitle";align-items:center!important;column-gap:10px;row-gap:5px;min-height:0!important;padding:18px 16px 15px!important}
+header h1{grid-area:brand;min-width:0;font-size:clamp(17px,4.6vw,24px)!important;line-height:1.2;margin:0!important}
+header .header-admin{grid-area:admin;align-self:center!important;justify-self:end;white-space:nowrap}
+header small{grid-area:subtitle;margin:0!important}
+nav button{min-height:0!important;height:auto!important;padding:9px 4px!important;line-height:1.2!important;border-radius:11px!important}
+@media(max-width:390px){nav button{min-height:0!important;padding:8px 3px!important;font-size:11px!important}}
 </style>
 <script src="megjelenes.js" defer></script>
 </head>
@@ -113,7 +120,7 @@ summary{cursor:pointer;font-weight:bold}
 </div>
 
 <nav>
-<button onclick="tab('matches')">Mérkőzések</button>
+<button onclick="tab('matches')">Következő élő mérkőzés</button>
 <button onclick="tab('fixtures')">Következő meccsek</button>
 <button onclick="tab('finished')">🏁 Befejezett meccsek</button>
 <button onclick="tab('players')">Játékosok</button>
@@ -384,8 +391,12 @@ function teamCrest(name, small=false){
 }
 
 function renderMatches(finished=false){
-const visibleMatches=matches.filter(m=>isFinished(m)===finished);
-let out=finished?'<h2>🏁 Befejezett meccsek</h2>':'<h2>Mérkőzések</h2>';
+// Élő és félidei meccsek mind láthatók; egyébként csak a legközelebbi tervezett.
+const liveMatches=matches.filter(m=>!isFinished(m)&&['Élő','Félidő'].includes(m.status));
+const plannedMatches=matches.filter(m=>!isFinished(m)&&!['Élő','Félidő'].includes(m.status))
+  .sort((a,b)=>(kickDate(a)?.getTime()??Infinity)-(kickDate(b)?.getTime()??Infinity));
+const visibleMatches=finished?matches.filter(isFinished):(liveMatches.length?liveMatches:plannedMatches.slice(0,1));
+let out=finished?'<h2>🏁 Befejezett meccsek</h2>':'<h2>⚽ Következő élő mérkőzés</h2>';
 
 if(!visibleMatches.length){
 out+=finished?'<p class="muted">Még nincsenek befejezett mérkőzések.</p>':'<p class="muted">Nincs folyamatban lévő vagy tervezett mérkőzés.</p>';
