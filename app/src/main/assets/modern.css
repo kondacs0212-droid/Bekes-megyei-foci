@@ -109,3 +109,43 @@ nav button{min-height:90px!important;padding:15px 4px!important;border-radius:17
   font-size:clamp(10px,2.7vw,14px);
   padding:6px 9px;
 }
+
+
+/* 2026-11-07 – kompakt menü, a fejléc címe az Admin mellett. */
+header{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto;
+  grid-template-areas:"brand admin" "subtitle subtitle";
+  align-items:center!important;
+  column-gap:9px;
+  row-gap:5px;
+  min-height:0!important;
+  padding:18px 16px 15px!important;
+}
+header h1{
+  grid-area:brand;
+  min-width:0;
+  font-size:clamp(16px,4.4vw,24px)!important;
+  line-height:1.2;
+  margin:0!important;
+}
+header .header-admin{
+  grid-area:admin;
+  align-self:center!important;
+  justify-self:end;
+  white-space:nowrap;
+}
+header small{grid-area:subtitle;margin:0!important}
+nav button{
+  min-height:0!important;
+  height:auto!important;
+  padding:9px 4px!important;
+  line-height:1.2!important;
+  border-radius:11px!important;
+}
+@media(max-width:390px){
+  nav button{min-height:0!important;padding:8px 3px!important;font-size:11px!important}
+}
+/* A már feltöltött valódi címereknél ne rajzolódjon fölé focilabda. */
+#matches article.card .team-name:has(img)::before,
+#matches article.card .team-name:has(img):last-child::before{content:none!important;display:none!important}
