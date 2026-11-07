@@ -939,7 +939,8 @@ ${fcmToken?`
 
 <div class="card">
 <h3>Új mérkőzés</h3>
-<label>Csoport<input id="mgroup" placeholder="Például: Északi csoport"></label>
+<label>Csoport<input id="mgroup" list="matchGroups" autocomplete="off" value="Békésmegyei III. Osztály Dél" placeholder="Válassz vagy írj csoportot"></label>
+<datalist id="matchGroups"><option value="Békésmegyei III. Osztály Dél"></option></datalist>
 <label>Forduló<input id="round" type="number" min="1"></label>
 <label>Hazai csapat<input id="home" list="southTeams" autocomplete="off" placeholder="Válassz vagy írj csapatnevet"></label>
 <label>Vendégcsapat<input id="away" list="southTeams" autocomplete="off" placeholder="Válassz vagy írj csapatnevet"></label>
