@@ -153,3 +153,21 @@ nav button{
 /* Admin gomb lejjebb, az Android állapotsávjától távolabb. */
 header .header-admin{transform:translateY(12px)!important}
 header{row-gap:13px!important}
+
+/* 2026-11-07 – a cím közvetlenül az alcím fölé, Admin a zöld sáv aljára. */
+header{
+  grid-template-areas:"brand ." "subtitle admin"!important;
+  grid-template-rows:auto auto!important;
+  align-items:end!important;
+  row-gap:3px!important;
+  padding-top:72px!important;
+  padding-bottom:15px!important;
+}
+header h1{align-self:end!important;margin:0!important}
+header small{align-self:end!important;margin:0!important}
+header .header-admin{
+  grid-area:admin!important;
+  align-self:end!important;
+  transform:none!important;
+  margin:0!important;
+}
