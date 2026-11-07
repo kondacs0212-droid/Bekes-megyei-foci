@@ -120,7 +120,7 @@ header{
   column-gap:9px;
   row-gap:5px;
   min-height:0!important;
-  padding:18px 16px 15px!important;
+  padding:54px 16px 15px!important; /* Hely az Android értesítési/állapotsáv alatt. */
 }
 header h1{
   grid-area:brand;
