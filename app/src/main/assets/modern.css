@@ -149,3 +149,7 @@ nav button{
 /* A már feltöltött valódi címereknél ne rajzolódjon fölé focilabda. */
 #matches article.card .team-name:has(img)::before,
 #matches article.card .team-name:has(img):last-child::before{content:none!important;display:none!important}
+
+/* Admin gomb lejjebb, az Android állapotsávjától távolabb. */
+header .header-admin{transform:translateY(12px)!important}
+header{row-gap:13px!important}
