@@ -395,7 +395,15 @@ function renderMatches(finished=false){
 const liveMatches=matches.filter(m=>!isFinished(m)&&['Élő','Félidő'].includes(m.status));
 const plannedMatches=matches.filter(m=>!isFinished(m)&&!['Élő','Félidő'].includes(m.status))
   .sort((a,b)=>(kickDate(a)?.getTime()??Infinity)-(kickDate(b)?.getTime()??Infinity));
-const visibleMatches=finished?matches.filter(isFinished):(liveMatches.length?liveMatches:plannedMatches.slice(0,1));
+const visibleMatches=finished
+  ? matches.filter(isFinished).sort((a,b)=>{
+      const finishTime=m=>{
+        const t=Date.parse(m.finishedAt||'');
+        return Number.isFinite(t)?t:(kickDate(m)?.getTime()??0);
+      };
+      return finishTime(b)-finishTime(a);
+    })
+  : (liveMatches.length?liveMatches:plannedMatches.slice(0,1));
 let out=finished?'<h2>🏁 Befejezett meccsek</h2>':'<h2>⚽ Következő élő mérkőzés</h2>';
 
 if(!visibleMatches.length){
